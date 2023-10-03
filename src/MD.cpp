@@ -460,15 +460,20 @@ double Kinetic() { //Write Function here!
 double Potential() {
     double quot, r2, rnorm, term1, term2, Pot;
     int i, j, k;
-    
+    //double r[MAXPART][3];
     Pot=0.;
     for (i=0; i<N; i++) {
+
+        double aux[3];
+        memcpy(aux, r[i], sizeof(r[i])); // copiar bloco de memoria dimuindo posteriormente 3 * N acessos a memoria
+
         for (j=0; j<N; j++) {
             
             if (j!=i) {
                 r2=0.;
                 for (k=0; k<3; k++) {
-                    r2 += (r[i][k]-r[j][k])*(r[i][k]-r[j][k]);
+                    double val = aux[k] - r[j][k];
+                    r2 += val * val; // ganhamos em criar uma estrutura de dados que armazena os valores de r2 para fazer os calculos debaixo fora destes for loops?
                 }
                 rnorm=sqrt(r2);
                 quot=sigma/rnorm;
