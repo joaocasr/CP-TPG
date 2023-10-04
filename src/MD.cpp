@@ -50,11 +50,11 @@ double Tinit;  //2;
 //
 const int MAXPART=5001;
 //  Position
-double r[MAXPART][3];
+double r[MAXPART*3]; //r[MAXPART * 3]
 //  Velocity
-double v[MAXPART][3];
+double v[MAXPART*3];
 //  Acceleration
-double a[MAXPART][3];
+double a[MAXPART*3];
 //  Force
 double F[MAXPART][3];
 
@@ -312,7 +312,6 @@ int main()
         mvs = MeanSquaredVelocity();
         KE = Kinetic();
         PE = Potential();
-        
         // Temperature from Kinetic Theory
         Temp = m*mvs/(3*kB) * TempFac;
         
@@ -380,9 +379,9 @@ void initialize() {
             for (k=0; k<n; k++) {
                 if (p<N) {
                     
-                    r[p][0] = (i + 0.5)*pos;
-                    r[p][1] = (j + 0.5)*pos;
-                    r[p][2] = (k + 0.5)*pos;
+                    r[3* p + 0] = (i + 0.5)*pos;
+                    r[3* p + 1] = (j + 0.5)*pos;
+                    r[3* p + 2] = (k + 0.5)*pos;
                 }
                 p++;
             }
@@ -420,9 +419,9 @@ double MeanSquaredVelocity() {
     
     for (int i=0; i<N; i++) {
         
-        vx2 = vx2 + v[i][0]*v[i][0];
-        vy2 = vy2 + v[i][1]*v[i][1];
-        vz2 = vz2 + v[i][2]*v[i][2];
+        vx2 = vx2 + v[3 * i + 0]*v[3 * i + 0];
+        vy2 = vy2 + v[3 * i + 1]*v[3 * i + 2];
+        vz2 = vz2 + v[3 * i + 2]*v[3 * i + 3];
         
     }
     v2 = (vx2+vy2+vz2)/N;
@@ -442,8 +441,9 @@ double Kinetic() { //Write Function here!
         
         v2 = 0.;
         for (int j=0; j<3; j++) {
-            
-            v2 += v[i][j]*v[i][j];
+            int index = 3*i+j;
+
+            v2 += v[index]*v[index];
             
         }
         kin += m*v2/2.;
@@ -459,33 +459,42 @@ double Kinetic() { //Write Function here!
 // Function to calculate the potential energy of the system
 double Potential() {
     double quot, r2, rnorm, term1, term2, Pot;
-    int i, j, k;
-    //double r[MAXPART][3];
+    int i, k,j;
+    double fep = 4*epsilon;
+
     Pot=0.;
     for (i=0; i<N; i++) {
+        int index = 3*i;
 
-        double aux[3];
-        memcpy(aux, r[i], sizeof(r[i])); // copiar bloco de memoria dimuindo posteriormente 3 * N acessos a memoria
+        //buscar valores a memoria de modo a poupar aprox 3 * (N-1) acessos à memoria posteriormente
+        double rx = r[index+0];
+        double ry = r[index+1];
+        double rz = r[index+2];
 
+        double aux[3] = {rx,ry,rz};
         for (j=0; j<N; j++) {
-            
             if (j!=i) {
                 r2=0.;
-                for (k=0; k<3; k++) {
-                    double val = aux[k] - r[j][k];
-                    r2 += val * val; // ganhamos em criar uma estrutura de dados que armazena os valores de r2 para fazer os calculos debaixo fora destes for loops?
-                }
+                int index2 = 3*j;
+
+                //loop unroll
+                double val1 = aux[0]- r[index2+0];
+                double val2 = aux[1]- r[index2+1];
+                double val3 = aux[2]- r[index2+2];
+
+                r2 = (val1 * val1)+(val2*val2)+(val3*val3);
+
                 rnorm=sqrt(r2);
                 quot=sigma/rnorm;
                 term1 = pow(quot,12.);
                 term2 = pow(quot,6.);
-                
-                Pot += 4*epsilon*(term1 - term2);
-                
+
+                Pot += fep*(term1 - term2);
+
             }
         }
     }
-    
+
     return Pot;
 }
 
@@ -498,31 +507,47 @@ void computeAccelerations() {
     int i, j, k;
     double f, rSqd;
     double rij[3]; // position of i relative to j
-    
-    
+
+
     for (i = 0; i < N; i++) {  // set all accelerations to zero
         for (k = 0; k < 3; k++) {
-            a[i][k] = 0;
+            int index = 3*i+k;
+            a[index] = 0;
         }
     }
     for (i = 0; i < N-1; i++) {   // loop over all distinct pairs i,j
+        int indexi0 = 3 * i + 0;
+        int indexi1 = 3 * i + 1;
+        int indexi2 = 3 * i + 2;
+
         for (j = i+1; j < N; j++) {
             // initialize r^2 to zero
             rSqd = 0;
-            
-            for (k = 0; k < 3; k++) {
-                //  component-by-componenent position of i relative to j
-                rij[k] = r[i][k] - r[j][k];
-                //  sum of squares of the components
-                rSqd += rij[k] * rij[k];
-            }
-            
+            int indexj0 = 3 * j + 0;
+            int indexj1 = 3 * j + 1;
+            int indexj2 = 3 * j + 2;
+
+            double rijx = r[indexi0] - r[indexj0];
+            double rijy = r[indexi1] - r[indexj1];
+            double rijz = r[indexi2] - r[indexj2];
+
+            rSqd = rijx * rijx + rijy * rijy + rijz * rijz;
+
+
             //  From derivative of Lennard-Jones with sigma and epsilon set equal to 1 in natural units!
             f = 24 * (2 * pow(rSqd, -7) - pow(rSqd, -4));
+
+            double fx = rijx * f;
+            double fy = rijy * f;
+            double fz = rijz * f;
+            double aux[3]={fx,fy,fz};
+
+            int aiindex = 3*i;
+            int ajndex = 3*i;
             for (k = 0; k < 3; k++) {
                 //  from F = ma, where m = 1 in natural units!
-                a[i][k] += rij[k] * f;
-                a[j][k] -= rij[k] * f;
+                a[aiindex+k] += aux[k];
+                a[ajndex+k] -= aux[k];
             }
         }
     }
@@ -541,9 +566,10 @@ double VelocityVerlet(double dt, int iter, FILE *fp) {
     //printf("  Updated Positions!\n");
     for (i=0; i<N; i++) {
         for (j=0; j<3; j++) {
-            r[i][j] += v[i][j]*dt + 0.5*a[i][j]*dt*dt;
+            int index = 3*i+j;
+            r[index] += v[index]*dt + 0.5*a[index]*dt*dt;
             
-            v[i][j] += 0.5*a[i][j]*dt;
+            v[index] += 0.5*a[index]*dt;
         }
         //printf("  %i  %6.4e   %6.4e   %6.4e\n",i,r[i][0],r[i][1],r[i][2]);
     }
@@ -552,20 +578,22 @@ double VelocityVerlet(double dt, int iter, FILE *fp) {
     //  Update velocity with updated acceleration
     for (i=0; i<N; i++) {
         for (j=0; j<3; j++) {
-            v[i][j] += 0.5*a[i][j]*dt;
+            int index = 3*i+j;
+            v[index] += 0.5*a[index]*dt;
         }
     }
     
     // Elastic walls
-    for (i=0; i<N; i++) {
+    for (i=0; i<N; i+=3) {
         for (j=0; j<3; j++) {
-            if (r[i][j]<0.) {
-                v[i][j] *=-1.; //- elastic walls
-                psum += 2*m*fabs(v[i][j])/dt;  // contribution to pressure from "left" walls
+            int index = 3*i+j;
+            if (r[index]<0.) {
+                v[index] *=-1.; //- elastic walls
+                psum += 2*m*fabs(v[index])/dt;  // contribution to pressure from "left" walls
             }
-            if (r[i][j]>=L) {
-                v[i][j]*=-1.;  //- elastic walls
-                psum += 2*m*fabs(v[i][j])/dt;  // contribution to pressure from "right" walls
+            if (r[index]>=L) {
+                v[index]*=-1.;  //- elastic walls
+                psum += 2*m*fabs(v[index])/dt;  // contribution to pressure from "right" walls
             }
         }
     }
@@ -592,8 +620,9 @@ void initializeVelocities() {
     for (i=0; i<N; i++) {
         
         for (j=0; j<3; j++) {
+            int index = 3*i+j;
             //  Pull a number from a Gaussian Distribution
-            v[i][j] = gaussdist();
+            v[index] = gaussdist();
             
         }
     }
@@ -604,8 +633,8 @@ void initializeVelocities() {
     
     for (i=0; i<N; i++) {
         for (j=0; j<3; j++) {
-            
-            vCM[j] += m*v[i][j];
+            int index = 3*i+j;
+            vCM[j] += m*v[index];
             
         }
     }
@@ -619,8 +648,8 @@ void initializeVelocities() {
     //  not drift in space!
     for (i=0; i<N; i++) {
         for (j=0; j<3; j++) {
-            
-            v[i][j] -= vCM[j];
+            int index = 3*i+j;
+            v[index] -= vCM[j];
             
         }
     }
@@ -631,8 +660,8 @@ void initializeVelocities() {
     vSqdSum=0.;
     for (i=0; i<N; i++) {
         for (j=0; j<3; j++) {
-            
-            vSqdSum += v[i][j]*v[i][j];
+            int index = 3*i+j;
+            vSqdSum += v[index]*v[index];
             
         }
     }
@@ -641,8 +670,8 @@ void initializeVelocities() {
     
     for (i=0; i<N; i++) {
         for (j=0; j<3; j++) {
-            
-            v[i][j] *= lambda;
+            int index = 3*i+j;
+            v[index] *= lambda;
             
         }
     }
