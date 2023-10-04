@@ -3,17 +3,17 @@ Flat profile:
 Each sample counts as 0.01 seconds.
   %   cumulative   self              self     total           
  time   seconds   seconds    calls  ms/call  ms/call  name    
- 54.52     20.96    20.96      201   104.27   104.27  Potential()
- 42.73     37.38    16.43      202    81.32    84.99  computeAccelerations()
-  1.93     38.13     0.74 942014880     0.00     0.00  __gnu_cxx::__promote_2<double, int, __gnu_cxx::__promote<double, std::__is_integer<double>::__value>::__type, __gnu_cxx::__promote<int, std::__is_integer<int>::__value>::__type>::__type std::pow<double, int>(double, int)
-  0.86     38.46     0.33        1   330.44   330.44  __gnu_cxx::__promote_2<int, double, __gnu_cxx::__promote<int, std::__is_integer<int>::__value>::__type, __gnu_cxx::__promote<double, std::__is_integer<double>::__value>::__type>::__type std::pow<int, double>(int, double)
-  0.05     38.48     0.02      201     0.10     0.10  MeanSquaredVelocity()
-  0.03     38.49     0.01      201     0.05     0.05  Kinetic()
-  0.00     38.49     0.00     6480     0.00     0.00  gaussdist()
-  0.00     38.49     0.00      201     0.00    84.99  VelocityVerlet(double, int, _IO_FILE*)
-  0.00     38.49     0.00        1     0.00   330.44  initialize()
-  0.00     38.49     0.00        1     0.00     0.00  initializeVelocities()
-  0.00     38.49     0.00        1     0.00     0.00  __gnu_cxx::__enable_if<std::__is_integer<int>::__value, double>::__type std::floor<int>(int)
+ 57.21     18.63    18.63      201    92.70    92.70  Potential()
+ 40.56     31.85    13.21      202    65.40    67.96  computeAccelerations()
+  1.58     32.36     0.52 942014880     0.00     0.00  __gnu_cxx::__promote_2<double, int, __gnu_cxx::__promote<double, std::__is_integer<double>::__value>::__type, __gnu_cxx::__promote<int, std::__is_integer<int>::__value>::__type>::__type std::pow<double, int>(double, int)
+  0.66     32.58     0.22        1   215.27   215.27  __gnu_cxx::__promote_2<int, double, __gnu_cxx::__promote<int, std::__is_integer<int>::__value>::__type, __gnu_cxx::__promote<double, std::__is_integer<double>::__value>::__type>::__type std::pow<int, double>(int, double)
+  0.03     32.59     0.01      201     0.05    68.01  VelocityVerlet(double, int, _IO_FILE*)
+  0.03     32.60     0.01      201     0.05     0.05  MeanSquaredVelocity()
+  0.03     32.61     0.01      201     0.05     0.05  Kinetic()
+  0.00     32.61     0.00     6480     0.00     0.00  gaussdist()
+  0.00     32.61     0.00        1     0.00   215.27  initialize()
+  0.00     32.61     0.00        1     0.00     0.00  initializeVelocities()
+  0.00     32.61     0.00        1     0.00     0.00  __gnu_cxx::__enable_if<std::__is_integer<int>::__value, double>::__type std::floor<int>(int)
 
  %         the percentage of the total running time of the
 time       program used by this function.
@@ -51,44 +51,44 @@ notice and this notice are preserved.
 		     Call graph (explanation follows)
 
 
-granularity: each sample hit covers 2 byte(s) for 0.03% of 38.49 seconds
+granularity: each sample hit covers 2 byte(s) for 0.03% of 32.61 seconds
 
 index % time    self  children    called     name
                                                  <spontaneous>
-[1]    100.0    0.00   38.49                 main [1]
-               20.96    0.00     201/201         Potential() [2]
-                0.00   17.08     201/201         VelocityVerlet(double, int, _IO_FILE*) [4]
-                0.00    0.33       1/1           initialize() [6]
-                0.08    0.00       1/202         computeAccelerations() [3]
-                0.02    0.00     201/201         MeanSquaredVelocity() [8]
+[1]    100.0    0.00   32.61                 main [1]
+               18.63    0.00     201/201         Potential() [2]
+                0.01   13.66     201/201         VelocityVerlet(double, int, _IO_FILE*) [4]
+                0.00    0.22       1/1           initialize() [6]
+                0.07    0.00       1/202         computeAccelerations() [3]
+                0.01    0.00     201/201         MeanSquaredVelocity() [8]
                 0.01    0.00     201/201         Kinetic() [9]
                 0.00    0.00       1/1           __gnu_cxx::__enable_if<std::__is_integer<int>::__value, double>::__type std::floor<int>(int) [18]
 -----------------------------------------------
-               20.96    0.00     201/201         main [1]
-[2]     54.5   20.96    0.00     201         Potential() [2]
+               18.63    0.00     201/201         main [1]
+[2]     57.1   18.63    0.00     201         Potential() [2]
 -----------------------------------------------
-                0.08    0.00       1/202         main [1]
-               16.35    0.74     201/202         VelocityVerlet(double, int, _IO_FILE*) [4]
-[3]     44.6   16.43    0.74     202         computeAccelerations() [3]
-                0.74    0.00 942014880/942014880     __gnu_cxx::__promote_2<double, int, __gnu_cxx::__promote<double, std::__is_integer<double>::__value>::__type, __gnu_cxx::__promote<int, std::__is_integer<int>::__value>::__type>::__type std::pow<double, int>(double, int) [5]
+                0.07    0.00       1/202         main [1]
+               13.15    0.51     201/202         VelocityVerlet(double, int, _IO_FILE*) [4]
+[3]     42.1   13.21    0.52     202         computeAccelerations() [3]
+                0.52    0.00 942014880/942014880     __gnu_cxx::__promote_2<double, int, __gnu_cxx::__promote<double, std::__is_integer<double>::__value>::__type, __gnu_cxx::__promote<int, std::__is_integer<int>::__value>::__type>::__type std::pow<double, int>(double, int) [5]
 -----------------------------------------------
-                0.00   17.08     201/201         main [1]
-[4]     44.4    0.00   17.08     201         VelocityVerlet(double, int, _IO_FILE*) [4]
-               16.35    0.74     201/202         computeAccelerations() [3]
+                0.01   13.66     201/201         main [1]
+[4]     41.9    0.01   13.66     201         VelocityVerlet(double, int, _IO_FILE*) [4]
+               13.15    0.51     201/202         computeAccelerations() [3]
 -----------------------------------------------
-                0.74    0.00 942014880/942014880     computeAccelerations() [3]
-[5]      1.9    0.74    0.00 942014880         __gnu_cxx::__promote_2<double, int, __gnu_cxx::__promote<double, std::__is_integer<double>::__value>::__type, __gnu_cxx::__promote<int, std::__is_integer<int>::__value>::__type>::__type std::pow<double, int>(double, int) [5]
+                0.52    0.00 942014880/942014880     computeAccelerations() [3]
+[5]      1.6    0.52    0.00 942014880         __gnu_cxx::__promote_2<double, int, __gnu_cxx::__promote<double, std::__is_integer<double>::__value>::__type, __gnu_cxx::__promote<int, std::__is_integer<int>::__value>::__type>::__type std::pow<double, int>(double, int) [5]
 -----------------------------------------------
-                0.00    0.33       1/1           main [1]
-[6]      0.9    0.00    0.33       1         initialize() [6]
-                0.33    0.00       1/1           __gnu_cxx::__promote_2<int, double, __gnu_cxx::__promote<int, std::__is_integer<int>::__value>::__type, __gnu_cxx::__promote<double, std::__is_integer<double>::__value>::__type>::__type std::pow<int, double>(int, double) [7]
+                0.00    0.22       1/1           main [1]
+[6]      0.7    0.00    0.22       1         initialize() [6]
+                0.22    0.00       1/1           __gnu_cxx::__promote_2<int, double, __gnu_cxx::__promote<int, std::__is_integer<int>::__value>::__type, __gnu_cxx::__promote<double, std::__is_integer<double>::__value>::__type>::__type std::pow<int, double>(int, double) [7]
                 0.00    0.00       1/1           initializeVelocities() [17]
 -----------------------------------------------
-                0.33    0.00       1/1           initialize() [6]
-[7]      0.9    0.33    0.00       1         __gnu_cxx::__promote_2<int, double, __gnu_cxx::__promote<int, std::__is_integer<int>::__value>::__type, __gnu_cxx::__promote<double, std::__is_integer<double>::__value>::__type>::__type std::pow<int, double>(int, double) [7]
+                0.22    0.00       1/1           initialize() [6]
+[7]      0.7    0.22    0.00       1         __gnu_cxx::__promote_2<int, double, __gnu_cxx::__promote<int, std::__is_integer<int>::__value>::__type, __gnu_cxx::__promote<double, std::__is_integer<double>::__value>::__type>::__type std::pow<int, double>(int, double) [7]
 -----------------------------------------------
-                0.02    0.00     201/201         main [1]
-[8]      0.1    0.02    0.00     201         MeanSquaredVelocity() [8]
+                0.01    0.00     201/201         main [1]
+[8]      0.0    0.01    0.00     201         MeanSquaredVelocity() [8]
 -----------------------------------------------
                 0.01    0.00     201/201         main [1]
 [9]      0.0    0.01    0.00     201         Kinetic() [9]
