@@ -421,9 +421,12 @@ double MeanSquaredVelocity() {
 
     for (int i=0; i<N; i++) {
         int index = 3 * i;
-        vx2 = vx2 + v[index]*v[index];
-        vy2 = vy2 + v[index+1]*v[index+1];
-        vz2 = vz2 + v[index+2]*v[index+2];
+        double v1 = v[index];
+        double v2 = v[index+1];
+        double v3 = v[index+2];
+        vx2 = vx2 + v1*v1;
+        vy2 = vy2 + v2*v2;
+        vz2 = vz2 + v3*v3;
 
     }
     v2 = (vx2+vy2+vz2)/N;
