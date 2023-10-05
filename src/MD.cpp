@@ -27,7 +27,7 @@
 #include<stdlib.h>
 #include<math.h>
 #include<string.h>
-
+#include <time.h>
 
 // Number of particles
 int N;
@@ -83,7 +83,7 @@ double Kinetic();
 
 int main()
 {
-
+    clock_t tStart = clock();
     //  variable delcarations
     int i;
     double dt, Vol, Temp, Press, Pavg, Tavg, rho;
@@ -358,6 +358,7 @@ int main()
     fclose(ofp);
     fclose(afp);
 
+    printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
     return 0;
 }
 
@@ -441,11 +442,16 @@ double Kinetic() { //Write Function here!
     for (int i=0; i<N; i++) {
 
         v2 = 0.;
-        for (int j=0; j<3; j++) {
-            int index = 3*i+j;
-            v2 += v[index]*v[index];
+        int index1 = 3*i;
+        int index2 = index1+1;
+        int index3 = index1+2;
 
-        }
+        double v1 = v[index1];
+        double v2 = v[index2];
+        double v3 = v[index3];
+
+        v2 = v1*v1 + v2*v2 + v3*v3;
+
         kin += m*v2/2.;
 
     }
@@ -551,7 +557,7 @@ double VelocityVerlet(double dt, int iter, FILE *fp) {
         int index_i0 = 3 * i;
         int index_i1 = 3 * i + 1;
         int index_i2= 3 * i + 2;
-        //loop unroll
+
         r[index_i0] += v[index_i0]*dt + 0.5*a[index_i0]*dt*dt;
         r[index_i1] += v[index_i1]*dt + 0.5*a[index_i1]*dt*dt;
         r[index_i2] += v[index_i2]*dt + 0.5*a[index_i2]*dt*dt;
