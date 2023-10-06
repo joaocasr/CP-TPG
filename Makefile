@@ -1,7 +1,7 @@
 CC = gcc
 SRC = src/
 PROFLAGS = -pg
-CFLAGS = -O3 -w
+CFLAGS = -O3 -w -funroll-all-loops
 #-O2
 
 .DEFAULT_GOAL = MD.exe
