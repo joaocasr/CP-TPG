@@ -442,16 +442,11 @@ double Kinetic() { //Write Function here!
     double v2, kin;
 
     kin =0.;
-    for (int i=0; i<N; i++) {
+    for (int i=0; i<3*N; i+=3) {
 
-        v2 = 0.;
-        int index1 = 3*i;
-        int index2 = index1+1;
-        int index3 = index1+2;
-
-        double v1 = v[index1];
-        double v2 = v[index2];
-        double v3 = v[index3];
+        double v1 = v[i];
+        double v2 = v[i+1];
+        double v3 = v[i+2];
 
         v2 = v1*v1 + v2*v2 + v3*v3;
 
@@ -483,7 +478,7 @@ double Potential() {
 
             if (j!=i) {
                 int index2 = 3*j;
-                //loop unroll
+
                 double val1 = rx-r[index2];
                 double val2 = ry-r[index2+1];
                 double val3 = rz-r[index2+2];
@@ -535,7 +530,9 @@ void computeAccelerations() {
             }
 
             //  From derivative of Lennard-Jones with sigma and epsilon set equal to 1 in natural units!
-            f = 24 * (2 * pow(rSqd, -7) - pow(rSqd, -4));
+            //f = 24 * (2 * pow(rSqd, -7) - pow(rSqd, -4));
+            double value = 1/rSqd;
+            f = 24 * (2 * (value*value*value*value*value*value*value) - (value*value*value*value));
             for (k = 0; k < 3; k++) {
                 //  from F = ma, where m = 1 in natural units!
                 a[index_i+k] += rij[k] * f;
