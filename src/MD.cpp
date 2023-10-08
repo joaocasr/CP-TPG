@@ -466,22 +466,21 @@ double Potential() {
     int i, j, k;
     double fep = 4*epsilon;
     Pot=0.;
-    for (i=0; i<N; i++) {
-        int index = 3*i;
+    int size = 3*N;
+    for (i=0; i<size; i+=3) {
 
         //buscar valores da memoria de modo a poupar aprox 3 * (N-1) acessos à memoria posteriormente
-        double rx = r[index];
-        double ry = r[index+1];
-        double rz = r[index+2];
+        double rx = r[i];
+        double ry = r[i+1];
+        double rz = r[i+2];
 
-        for (j=0; j<N; j++) {
+        for (j=0; j<size; j+=3) {
 
             if (j!=i) {
-                int index2 = 3*j;
 
-                double val1 = rx-r[index2];
-                double val2 = ry-r[index2+1];
-                double val3 = rz-r[index2+2];
+                double val1 = rx-r[j];
+                double val2 = ry-r[j+1];
+                double val3 = rz-r[j+2];
 
                 r2 = (val1 * val1)+(val2*val2)+(val3*val3);
 
