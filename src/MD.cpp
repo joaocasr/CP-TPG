@@ -474,9 +474,7 @@ double Potential() {
         double ry = r[i+1];
         double rz = r[i+2];
 
-        for (j=0; j<size; j+=3) {
-
-            if (j!=i) {
+        for (j = 0; j < i; j += 3){
 
                 double val1 = rx-r[j];
                 double val2 = ry-r[j+1];
@@ -490,7 +488,6 @@ double Potential() {
                 term1 = term2 * term2; //q^12 - q^6 <=> q^6^2 - q^6
 
                 Pot += fep*(term1 - term2);
-            }
         }
     }
 
@@ -506,13 +503,12 @@ void computeAccelerations() {
     int i, j, k;
     double f, rSqd;
     double rij[3]; // position of i relative to j
+    int size = 3*N;
 
-
-    for (i = 0; i < N; i++) {  // set all accelerations to zero
-        int index = 3 * i;
-        for (k = 0; k < 3; k++) {
-            a[index+k] = 0;
-        }
+    for (i = 0; i < size; i+=3) {  // set all accelerations to zero
+        a[i] = 0;
+        a[i+1] = 0;
+        a[i+2] = 0;
     }
     for (i = 0; i < N-1; i++) {   // loop over all distinct pairs i,j
 

@@ -1,7 +1,8 @@
 CC = gcc
 SRC = src/
 PROFLAGS = -pg
-CFLAGS = -O3 -w -funroll-all-loops
+CFLAGS = -O3 -w -funroll-all-loops -fopt-info-vec-optimized
+#-fopt-info-vec-missed
 #-O2
 
 .DEFAULT_GOAL = MD.exe
