@@ -80,6 +80,7 @@ double Potential();
 double MeanSquaredVelocity();
 //  Compute total kinetic energy from particle mass and velocities
 double Kinetic();
+double calculatePositions(int function);
 
 int main()
 {
@@ -458,86 +459,51 @@ double Kinetic() { //Write Function here!
 
 }
 
-
-// Function to calculate the potential energy of the system
-double Potential() {
-    double quot, r2, rnorm, term1, term2, Pot;
-    int i, j;
-    double fep = 4*epsilon;
-    Pot=0.;
-    //int size = 3*N;
-    for (i=0; i<N; i++) {
-
-        //buscar valores da memoria de modo a poupar aprox 3 * (N-1) acessos à memoria posteriormente
+double calculatePositions(int fun) {
+    double rnorm,quot,term2,term1,rSqdpow3,rSqdpow7,f;
+    double Pot=0.0;
+    double fep = 4 * epsilon;
+    double rij[3]={0,0,0};
+    for (int i = 0; i < N; i++) {
         double rx = r[i][0];
         double ry = r[i][1];
         double rz = r[i][2];
 
-        for (j = i + 1; j < N; j++){ // avoiding duplicated calculations by calculate the lower triangle of the matrix
+        for (int j = i + 1; j < N; j++) {
+            rij[0] = rx - r[j][0];
+            rij[1] = ry - r[j][1];
+            rij[2] = rz - r[j][2];
+            double r2 = (rij[0] * rij[0]) + (rij[1] * rij[1]) + (rij[2] * rij[2]);
 
-            double val1 = rx-r[j][0];
-            double val2 = ry-r[j][1];
-            double val3 = rz-r[j][2];
-            //the values will be symmetric but as we do a power of 2 the result will be the same
-
-            r2 = (val1 * val1)+(val2*val2)+(val3*val3);
-
-            rnorm=sqrt(r2);
-            quot=sigma/rnorm;
-            term2 = quot * quot * quot * quot * quot * quot;
-            term1 = term2 * term2; //q^12 - q^6 <=> q^6^2 - q^6
-
-            Pot += fep*(term1 - term2);
-        }
-    }
-
-    return Pot;
-}
-
-
-
-//   Uses the derivative of the Lennard-Jones potential to calculate
-//   the forces on each atom.  Then uses a = F/m to calculate the
-//   accelleration of each atom.
-void computeAccelerations() {
-    int i, j, k;
-    double f, rSqd;
-    double rij[3]; // position of i relative to j
-
-    for (i = 0; i < N; i++) {  // set all accelerations to zero
-        a[i][0] = 0;
-        a[i][1] = 0;
-        a[i][2] = 0;
-    }
-    for (i = 0; i < N-1; i++) {   // loop over all distinct pairs i,j
-
-        double ri0 = r[i][0];
-        double ri1 = r[i][1];
-        double ri2 = r[i][2];
-
-        for (j = i+1; j < N; j++) {
-            //  component-by-componenent position of i relative to j
-            rij[0] = ri0 - r[j][0];
-            rij[1] = ri1 - r[j][1];
-            rij[2] = ri2 - r[j][2];
-            //  sum of squares of the components
-            rSqd = (rij[0] * rij[0]) + (rij[1] * rij[1]) + (rij[2] * rij[2]);
-
-            //  From derivative of Lennard-Jones with sigma and epsilon set equal to 1 in natural units!
-            //f = 24 * (2 * pow(rSqd, -7) - pow(rSqd, -4));
-            double rSqdpow3 = rSqd*rSqd*rSqd;
-            double rSqdpow7 = rSqdpow3 * rSqd * rSqd * rSqd * rSqd;
-            f = 24 * ((2 -rSqdpow3)/rSqdpow7);
-
-            for (k = 0; k < 3; k++) {
-                //  from F = ma, where m = 1 in natural units!
-                double val = rij[k] * f;
-                a[i][k] += val;
-                a[j][k] -= val;
+            // Perform calculations specific to each function
+            if (fun == 1) {
+                rnorm=sqrt(r2);
+                quot=sigma/rnorm;
+                term2 = quot * quot * quot * quot * quot * quot;
+                term1 = term2 * term2; //q^12 - q^6 <=> q^6^2 - q^6
+                Pot = fep * (term1 - term2);
+                // Handle Pot as needed for Potential()
+            } else if (fun == 2) {
+                rSqdpow3 = r2 * r2 * r2;
+                rSqdpow7 = rSqdpow3 * r2 * r2 * r2 * r2;
+                f = 24 * ((2 - rSqdpow3) / rSqdpow7);
+                for (int k = 0; k < 3; k++) {
+                    double val = rij[k] * f;
+                    a[i][k] += val;
+                    a[j][k] -= val;
+                }
+                // Handle f as needed for computeAccelerations()
             }
         }
     }
+    return Pot;
 }
+
+double Potential() {
+    //int fun = 1;//POTENTIAL
+    return calculatePositions(1);
+}
+
 
 // returns sum of dv/dt*m/A (aka Pressure) from elastic collisions with walls
 double VelocityVerlet(double dt, int iter, FILE *fp) {
@@ -601,6 +567,15 @@ double VelocityVerlet(double dt, int iter, FILE *fp) {
     return psum/(6*L*L);
 }
 
+void computeAccelerations() {
+    //int fun = 2;//ACCELERATIONS
+    for (int i = 0; i < N; i++) {  // set all accelerations to zero
+        a[i][0] = 0;
+        a[i][1] = 0;
+        a[i][2] = 0;
+    }
+    calculatePositions(2);
+}
 
 void initializeVelocities() {
 

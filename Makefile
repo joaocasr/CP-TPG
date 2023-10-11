@@ -1,8 +1,8 @@
 CC = gcc
 SRC = src/
 PROFLAGS = -pg
-CFLAGS = -O3 -w -funroll-all-loops
-#CFLAGS = -Ofast -w
+#CFLAGS = -O3 -w -funroll-all-loops
+CFLAGS = -Ofast -w
 #-fopt-info-vec-optimized
 #-fopt-info-vec-optimized
 #-fopt-info-vec-missed
@@ -11,7 +11,7 @@ CFLAGS = -O3 -w -funroll-all-loops
 .DEFAULT_GOAL = MD.exe
 
 MD.exe: $(SRC)/MD.cpp
-	$(CC) $(CFLAGS) $(SRC)MD.cpp -lm -o MD.exe
+	$(CC) $(PROFLAGS) $(CFLAGS) $(SRC)MD.cpp -lm -o MD.exe
 
 clean:
 	rm ./MD.exe cp_output.txt cp_average.txt cp_traj.xyz gmon.out
