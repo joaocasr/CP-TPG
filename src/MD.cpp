@@ -473,11 +473,12 @@ double Potential() {
         double ry = r[i][1];
         double rz = r[i][2];
 
-        for (j = 0; j < i; j++){
+        for (j = i + 1; j < N; j++){ // avoiding duplicated calculations by calculate the lower triangle of the matrix
 
             double val1 = rx-r[j][0];
             double val2 = ry-r[j][1];
             double val3 = rz-r[j][2];
+            //the values will be symmetric but as we do a power of 2 the result will be the same
 
             r2 = (val1 * val1)+(val2*val2)+(val3*val3);
 
