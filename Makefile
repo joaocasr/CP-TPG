@@ -1,8 +1,10 @@
 CC = gcc
 SRC = src/
 PROFLAGS = -pg
-#CFLAGS = -O3 -w -funroll-all-loops
-CFLAGS = -Ofast -w
+CFLAGS = -O3 -w -funroll-all-loops
+# -mmmx
+PREVIL = chmod +x
+#CFLAGS = -Ofast -w
 #-fopt-info-vec-optimized
 #-fopt-info-vec-optimized
 #-fopt-info-vec-missed

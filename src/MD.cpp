@@ -460,7 +460,7 @@ double Kinetic() { //Write Function here!
 }
 
 double calculatePositions(int fun) {
-    double rnorm,quot,term2,term1,rSqdpow3,rSqdpow7,f;
+    double term2,term1,rSqdpow3,rSqdpow7,f; //rnorm,quot
     double Pot=0.0;
     double fep = 4 * epsilon;
     double rij[3]={0,0,0};
@@ -474,19 +474,23 @@ double calculatePositions(int fun) {
             rij[1] = ry - r[j][1];
             rij[2] = rz - r[j][2];
             double r2 = (rij[0] * rij[0]) + (rij[1] * rij[1]) + (rij[2] * rij[2]);
+            rSqdpow3 = r2 * r2 * r2;
 
             // Perform calculations specific to each function
             if (fun == 1) {
-                rnorm=sqrt(r2);
-                quot=sigma/rnorm;
-                term2 = quot * quot * quot * quot * quot * quot;
-                term1 = term2 * term2; //q^12 - q^6 <=> q^6^2 - q^6
+                //rnorm=sqrt(r2);
+                //quot=sigma/rnorm;
+                //term2 = quot * quot * quot * quot * quot * quot;
+                //term1 = term2 * term2; //q^12 - q^6 <=> q^6^2 - q^6
+
+                term2 = sigma / rSqdpow3;
+                term1 = term2 * term2;
+
                 Pot = fep * (term1 - term2);
                 // Handle Pot as needed for Potential()
-            } else if (fun == 2) {
-                rSqdpow3 = r2 * r2 * r2;
-                rSqdpow7 = rSqdpow3 * r2 * r2 * r2 * r2;
-                f = 24 * ((2 - rSqdpow3) / rSqdpow7);
+            } else{
+                rSqdpow7 = rSqdpow3 * rSqdpow3 * r2;
+                f = (48 - 24 * rSqdpow3) / rSqdpow7;
                 for (int k = 0; k < 3; k++) {
                     double val = rij[k] * f;
                     a[i][k] += val;
@@ -498,6 +502,7 @@ double calculatePositions(int fun) {
     }
     return Pot;
 }
+
 
 double Potential() {
     //int fun = 1;//POTENTIAL
