@@ -80,7 +80,8 @@ double Potential();
 double MeanSquaredVelocity();
 //  Compute total kinetic energy from particle mass and velocities
 double Kinetic();
-double calculatePositions(int function);
+
+double potAccWork(int function);
 
 int main()
 {
@@ -90,8 +91,8 @@ int main()
     double dt, Vol, Temp, Press, Pavg, Tavg, rho;
     double VolFac, TempFac, PressFac, timefac;
     double KE, PE, mvs, gc, Z;
-    char trash[10000], prefix[1000], tfn[1000], ofn[1000], afn[1000];
-    FILE *infp, *tfp, *ofp, *afp;
+    char prefix[1000], tfn[1000], ofn[1000], afn[1000];
+    FILE *tfp, *ofp, *afp;
 
 
     printf("\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
@@ -326,8 +327,7 @@ int main()
         Tavg += Temp;
         Pavg += Press;
 
-        fprintf(ofp,"  %8.4e  %20.8f  %20.8f %20.8f  %20.8f  %20.8f \n",i*dt*timefac,Temp,Press,KE, PE, KE+PE);
-
+        fprintf(ofp,"  %8.12e  %20.12f  %20.12f %20.12f  %20.12f  %20.12f \n",i*dt*timefac,Temp,Press,KE, PE, KE+PE);
 
     }
 
@@ -439,9 +439,10 @@ double MeanSquaredVelocity() {
 //  Function to calculate the kinetic energy of the system
 double Kinetic() { //Write Function here!
 
-    double v2, kin;
+    double kin;
 
     kin =0.;
+    double const2m = m/2.;
     for (int i=0; i<N; i++) {
 
         double v1 = v[i][0];
@@ -450,16 +451,16 @@ double Kinetic() { //Write Function here!
 
         v2 = v1*v1 + v2*v2 + v3*v3;
 
-        //kin += m*v2/2.;
-        kin += 0.5*v2;
+        //kin = m*v2/2 + m*v2/2 + m*v2/2...; m/2 em evidencia
+        kin += v2;
     }
 
     //printf("  Total Kinetic Energy is %f\n",N*mvs*m/2.);
-    return kin;
+    return kin*const2m;
 
 }
 
-double calculatePositions(int fun) {
+double potAccWork(int fun) {
     double term2,term1,rSqdpow3,rSqdpow7,f; //rnorm,quot
     double Pot=0.0;
     double fep = 8 * epsilon;
@@ -476,7 +477,6 @@ double calculatePositions(int fun) {
             double r2 = (rij[0] * rij[0]) + (rij[1] * rij[1]) + (rij[2] * rij[2]);
             rSqdpow3 = r2 * r2 * r2;
 
-            // Perform calculations specific to each function
             if (fun == N) {
                 //rnorm=sqrt(r2);
                 //quot=sigma/rnorm;
@@ -485,28 +485,25 @@ double calculatePositions(int fun) {
 
                 term2 = sigma / rSqdpow3;
                 term1 = term2 * term2;
-
-                Pot += fep * (term1 - term2);
-                // Handle Pot as needed for Potential()
+                Pot += term1 - term2; //fep em evidencia
             } else{
                 rSqdpow7 = rSqdpow3 * rSqdpow3 * r2;
-                f = (48 - 24 * rSqdpow3) / rSqdpow7;
+                f = 24 * (2 - rSqdpow3) / rSqdpow7;
                 for (int k = 0; k < 3; k++) {
                     double val = rij[k] * f;
                     a[i][k] += val;
                     a[j][k] -= val;
                 }
-                // Handle f as needed for computeAccelerations()
             }
         }
     }
-    return Pot;
+    return Pot * fep;
 }
 
 
 double Potential() {
     //int fun = 1;//POTENTIAL
-    return calculatePositions(N);
+    return potAccWork(N);
 }
 
 
@@ -523,7 +520,7 @@ double VelocityVerlet(double dt, int iter, FILE *fp) {
     //printf("  Updated Positions!\n");
     double halfsqddt = 0.5 * dt * dt;
     double halfdt1 = 0.5 * dt;
-    for (i=0; i<N; i++) {
+    for (i=0; i<N; i++) { //ganho de +/- 0.5s.
 
         r[i][0] += v[i][0]*dt + a[i][0]*halfsqddt;
         r[i][1] += v[i][1]*dt + a[i][1]*halfsqddt;
@@ -543,17 +540,17 @@ double VelocityVerlet(double dt, int iter, FILE *fp) {
             v[i][j] += a[i][j]*halfdt1;
         }
     }
-    //double const2m = 2 * m;
+    double const2mdt = 2 * m / dt;
     // Elastic walls
     for (i=0; i<N; i++) {
         for (j=0; j<3; j++) {
             if (r[i][j]<0.) {
                 v[i][j] *=-1.; //- elastic walls
-                psum += 2*fabs(v[i][j])/dt;  //const2m| contribution to pressure from "left" walls
+                psum += fabs(v[i][j]);  //const2m| contribution to pressure from "left" walls
             }
             if (r[i][j]>=L) {
                 v[i][j] *=-1.;  //- elastic walls
-                psum += 2*fabs(v[i][j])/dt;  //const2m| contribution to pressure from "right" walls
+                psum += fabs(v[i][j]);  //const2m| contribution to pressure from "right" walls
             }
         }
     }
@@ -569,7 +566,7 @@ double VelocityVerlet(double dt, int iter, FILE *fp) {
     }*/
     //fprintf(fp,"\n \n");
 
-    return psum/(6*L*L);
+    return const2mdt * psum/(6*L*L);
 }
 
 void computeAccelerations() {
@@ -579,7 +576,7 @@ void computeAccelerations() {
         a[i][1] = 0;
         a[i][2] = 0;
     }
-    calculatePositions(N-1);
+    potAccWork(N-1);
 }
 
 void initializeVelocities() {
