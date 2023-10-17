@@ -460,39 +460,39 @@ double Kinetic() { //Write Function here!
 
 }
 
+#define blockSize 64
+
 double potAccWork(int fun) {
-    double term2,term1,rSqdpow3,rSqdpow7,f; //rnorm,quot
-    double Pot=0.0;
+    double term2, term1, rSqdpow3, rSqdpow7, f;
+    double Pot = 0.0;
     double fep = 8 * epsilon;
-    double rij[3]={0,0,0};
-    for (int i = 0; i < fun; i++) {
-        double rx = r[i][0];
-        double ry = r[i][1];
-        double rz = r[i][2];
+    double rij[3] = {0, 0, 0};
 
-        for (int j = i + 1; j < N; j++) {
-            rij[0] = rx - r[j][0];
-            rij[1] = ry - r[j][1];
-            rij[2] = rz - r[j][2];
-            double r2 = (rij[0] * rij[0]) + (rij[1] * rij[1]) + (rij[2] * rij[2]);
-            rSqdpow3 = r2 * r2 * r2;
+    for (int i = 0; i < fun; i += blockSize) {
+        for (int j = 0; j < N; j += blockSize) {
+            for (int ib = i; ib < i + blockSize && ib < fun; ib++) {
+                for (int jb = j; jb < j + blockSize && jb < N; jb++) {
+                    if (ib >= jb) continue; // Avoid symmetric pairs (i, j)
 
-            if (fun == N) {
-                //rnorm=sqrt(r2);
-                //quot=sigma/rnorm;
-                //term2 = quot * quot * quot * quot * quot * quot;
-                //term1 = term2 * term2; //q^12 - q^6 <=> q^6^2 - q^6
+                    rij[0] = r[ib][0] - r[jb][0];
+                    rij[1] = r[ib][1] - r[jb][1];
+                    rij[2] = r[ib][2] - r[jb][2];
+                    double r2 = (rij[0] * rij[0]) + (rij[1] * rij[1]) + (rij[2] * rij[2]);
+                    rSqdpow3 = r2 * r2 * r2;
 
-                term2 = sigma / rSqdpow3;
-                term1 = term2 * term2;
-                Pot += term1 - term2; //fep em evidencia
-            } else{
-                rSqdpow7 = rSqdpow3 * rSqdpow3 * r2;
-                f = 24 * (2 - rSqdpow3) / rSqdpow7;
-                for (int k = 0; k < 3; k++) {
-                    double val = rij[k] * f;
-                    a[i][k] += val;
-                    a[j][k] -= val;
+                    if (fun == N) {
+                        term2 = sigma / rSqdpow3;
+                        term1 = term2 * term2;
+                        Pot += term1 - term2; // fep em evidencia
+                    } else {
+                        rSqdpow7 = rSqdpow3 * rSqdpow3 * r2;
+                        f = 24 * (2 - rSqdpow3) / rSqdpow7;
+                        for (int k = 0; k < 3; k++) {
+                            double val = rij[k] * f;
+                            a[ib][k] += val;
+                            a[jb][k] -= val;
+                        }
+                    }
                 }
             }
         }
