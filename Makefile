@@ -1,7 +1,7 @@
 CC = gcc
 SRC = src/
 PROFLAGS = -pg
-CFLAGS = -O3 -w -funroll-all-loops
+CFLAGS = -O3 -w -funroll-all-loops -ftree-vectorize -msse4
 #-ftree-vectorize -mavx
 # -mmmx
 #PREVIL = chmod +x

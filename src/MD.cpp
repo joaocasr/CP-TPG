@@ -29,6 +29,7 @@
 #include<string.h>
 #include <time.h>
 
+#define blockSize 64
 // Number of particles
 int N = 2160;
 
@@ -460,8 +461,6 @@ double Kinetic() { //Write Function here!
 
 }
 
-#define blockSize 64
-
 double potAccWork(int fun) {
     double term2, term1, rSqdpow3, rSqdpow7, f;
     double Pot = 0.0;
@@ -472,7 +471,7 @@ double potAccWork(int fun) {
         for (int j = 0; j < N; j += blockSize) {
             for (int ib = i; ib < i + blockSize && ib < fun; ib++) {
                 for (int jb = j; jb < j + blockSize && jb < N; jb++) {
-                    if (ib >= jb) continue; // Avoid symmetric pairs (i, j)
+                    if (ib >= jb) continue;
 
                     rij[0] = r[ib][0] - r[jb][0];
                     rij[1] = r[ib][1] - r[jb][1];
@@ -499,7 +498,6 @@ double potAccWork(int fun) {
     }
     return Pot * fep;
 }
-
 
 double Potential() {
     //int fun = 1;//POTENTIAL
