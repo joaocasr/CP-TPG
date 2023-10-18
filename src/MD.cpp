@@ -29,7 +29,6 @@
 #include<string.h>
 #include <time.h>
 
-#define blockSize 64
 // Number of particles
 int N = 2160;
 
@@ -461,31 +460,30 @@ double Kinetic() { //Write Function here!
 
 }
 
+#define blockSize 32
+
 double potAccWork(int fun) {
-    double term2, term1, rSqdpow3, rSqdpow7, f;
     double Pot = 0.0;
     double fep = 8 * epsilon;
-    double rij[3] = {0, 0, 0};
 
-    for (int i = 0; i < fun; i += blockSize) {
-        for (int j = 0; j < N; j += blockSize) {
-            for (int ib = i; ib < i + blockSize && ib < fun; ib++) {
-                for (int jb = j; jb < j + blockSize && jb < N; jb++) {
-                    if (ib >= jb) continue;
-
+    for (int j = 0; j < N; j += blockSize) {
+        for (int i = 0; i < fun; i += blockSize) {
+            for (int jb = j; jb < j + blockSize && jb < N; jb++) {
+                for (int ib = i; ib < i + blockSize && ib < fun && ib < jb; ib++) {
+                    double rij[3];
                     rij[0] = r[ib][0] - r[jb][0];
                     rij[1] = r[ib][1] - r[jb][1];
                     rij[2] = r[ib][2] - r[jb][2];
-                    double r2 = (rij[0] * rij[0]) + (rij[1] * rij[1]) + (rij[2] * rij[2]);
-                    rSqdpow3 = r2 * r2 * r2;
+                    double r2 = rij[0] * rij[0] + rij[1] * rij[1] + rij[2] * rij[2];
+                    double rSqdpow3 = r2 * r2 * r2;
 
                     if (fun == N) {
-                        term2 = sigma / rSqdpow3;
-                        term1 = term2 * term2;
-                        Pot += term1 - term2; // fep em evidencia
+                        double term2 = sigma / rSqdpow3;
+                        double term1 = term2 * term2;
+                        Pot += term1 - term2;
                     } else {
-                        rSqdpow7 = rSqdpow3 * rSqdpow3 * r2;
-                        f = 24 * (2 - rSqdpow3) / rSqdpow7;
+                        double rSqdpow7 = rSqdpow3 * rSqdpow3 * r2;
+                        double f = 24 * (2 - rSqdpow3) / rSqdpow7;
                         for (int k = 0; k < 3; k++) {
                             double val = rij[k] * f;
                             a[ib][k] += val;
