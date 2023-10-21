@@ -44,6 +44,9 @@ double kBSI = 1.38064852e-23;  // m^2*kg/(s^2*K)
 //  Size of box, which will be specified in natural units
 double L;
 
+double const2m = m/2.;
+double potential;
+
 //  Initial Temperature in Natural Units
 double Tinit;  //2;
 //  Vectors!
@@ -69,7 +72,7 @@ void initialize();
 double VelocityVerlet(double dt, int iter, FILE *fp);
 //  Compute Force using F = -dV/dr
 //  solve F = ma for use in Velocity Verlet
-void computeAccelerations();
+double computeAccelerations();
 //  Numerical Recipes function for generation gaussian distribution
 double gaussdist();
 //  Initialize velocities according to user-supplied initial Temperature (Tinit)
@@ -79,7 +82,7 @@ double Potential();
 //  Compute mean squared velocity from particle velocities
 double MeanSquaredVelocity();
 //  Compute total kinetic energy from particle mass and velocities
-double Kinetic();
+//double Kinetic();
 
 double potAccWork(int function);
 
@@ -312,9 +315,10 @@ int main()
         //  Potential, and Kinetic Energy
         //  We would also like to use the IGL to try to see if we can extract the gas constant
         mvs = MeanSquaredVelocity();
-        KE = Kinetic();
-        PE = Potential();
-
+        //Kinetic() == MeanSquaredVelocity() * N * const2m
+        //KENETIC ENERGY USING PREVIOUS VALUE
+        KE = mvs * N * const2m;
+        PE = potential;
         // Temperature from Kinetic Theory
         Temp = m*mvs/(3*kB) * TempFac;
 
@@ -344,12 +348,12 @@ int main()
     printf("\n  TO ANIMATE YOUR SIMULATION, OPEN THE FILE \n  '%s' WITH VMD AFTER THE SIMULATION COMPLETES\n",tfn);
     printf("\n  TO ANALYZE INSTANTANEOUS DATA ABOUT YOUR MOLECULE, OPEN THE FILE \n  '%s' WITH YOUR FAVORITE TEXT EDITOR OR IMPORT THE DATA INTO EXCEL\n",ofn);
     printf("\n  THE FOLLOWING THERMODYNAMIC AVERAGES WILL BE COMPUTED AND WRITTEN TO THE FILE  \n  '%s':\n",afn);
-    printf("\n  AVERAGE TEMPERATURE (K):                 %15.5f\n",Tavg);
-    printf("\n  AVERAGE PRESSURE  (Pa):                  %15.5f\n",Pavg);
-    printf("\n  PV/nT (J * mol^-1 K^-1):                 %15.5f\n",gc);
-    printf("\n  PERCENT ERROR of pV/nT AND GAS CONSTANT: %15.5f\n",100*fabs(gc-8.3144598)/8.3144598);
-    printf("\n  THE COMPRESSIBILITY (unitless):          %15.5f \n",Z);
-    printf("\n  TOTAL VOLUME (m^3):                      %10.5e \n",Vol*VolFac);
+    printf("\n  AVERAGE TEMPERATURE (K):                 %15.12f\n",Tavg);
+    printf("\n  AVERAGE PRESSURE  (Pa):                  %15.12f\n",Pavg);
+    printf("\n  PV/nT (J * mol^-1 K^-1):                 %15.12f\n",gc);
+    printf("\n  PERCENT ERROR of pV/nT AND GAS CONSTANT: %15.12f\n",100*fabs(gc-8.3144598)/8.3144598);
+    printf("\n  THE COMPRESSIBILITY (unitless):          %15.12f \n",Z);
+    printf("\n  TOTAL VOLUME (m^3):                      %10.12e \n",Vol*VolFac);
     printf("\n  NUMBER OF PARTICLES (unitless):          %i \n", N);
 
 
@@ -437,12 +441,12 @@ double MeanSquaredVelocity() {
 }
 
 //  Function to calculate the kinetic energy of the system
+/*
 double Kinetic() { //Write Function here!
 
     double kin;
 
     kin =0.;
-    double const2m = m/2.;
     for (int i=0; i<N; i++) {
 
         double v1 = v[i][0];
@@ -458,7 +462,7 @@ double Kinetic() { //Write Function here!
     //printf("  Total Kinetic Energy is %f\n",N*mvs*m/2.);
     return kin*const2m;
 
-}
+}*/
 
 #define blockSize 32
 
@@ -470,18 +474,19 @@ double potAccWork(int fun) {
         for (int i = 0; i < fun; i += blockSize) {
             for (int jb = j; jb < j + blockSize && jb < N; jb++) {
                 for (int ib = i; ib < i + blockSize && ib < fun && ib < jb; ib++) {
+
                     double rij[3];
                     rij[0] = r[ib][0] - r[jb][0];
                     rij[1] = r[ib][1] - r[jb][1];
                     rij[2] = r[ib][2] - r[jb][2];
+
                     double r2 = rij[0] * rij[0] + rij[1] * rij[1] + rij[2] * rij[2];
                     double rSqdpow3 = r2 * r2 * r2;
+                    double term2 = sigma / rSqdpow3;
+                    double term1 = term2 * term2;
+                    Pot += term1 - term2;
 
-                    if (fun == N) {
-                        double term2 = sigma / rSqdpow3;
-                        double term1 = term2 * term2;
-                        Pot += term1 - term2;
-                    } else {
+                    if (fun == N-1) {
                         double rSqdpow7 = rSqdpow3 * rSqdpow3 * r2;
                         double f = 24 * (2 - rSqdpow3) / rSqdpow7;
                         for (int k = 0; k < 3; k++) {
@@ -528,7 +533,7 @@ double VelocityVerlet(double dt, int iter, FILE *fp) {
         //printf("  %i  %6.4e   %6.4e   %6.4e\n",i,r[i][0],r[i][1],r[i][2]);
     }
     //  Update accellerations from updated positions
-    computeAccelerations();
+    potential = computeAccelerations();
     //  Update velocity with updated acceleration
     //double halfdt2 = 0.5 * dt;
     for (i=0; i<N; i++) {
@@ -565,14 +570,14 @@ double VelocityVerlet(double dt, int iter, FILE *fp) {
     return const2mdt * psum/(6*L*L);
 }
 
-void computeAccelerations() {
+double computeAccelerations() {
     //int fun = 2;//ACCELERATIONS
     for (int i = 0; i < N; i++) {  // set all accelerations to zero
         a[i][0] = 0;
         a[i][1] = 0;
         a[i][2] = 0;
     }
-    potAccWork(N-1);
+    return potAccWork(N-1);
 }
 
 void initializeVelocities() {
