@@ -216,7 +216,7 @@ int main()
 
     scanf("%lf",&rho);
 
-    //N = 10*216;
+
     Vol = N/(rho*NA);
 
     Vol /= VolFac;
@@ -440,29 +440,6 @@ double MeanSquaredVelocity() {
     return v2;
 }
 
-//  Function to calculate the kinetic energy of the system
-/*
-double Kinetic() { //Write Function here!
-
-    double kin;
-
-    kin =0.;
-    for (int i=0; i<N; i++) {
-
-        double v1 = v[i][0];
-        double v2 = v[i][1];
-        double v3 = v[i][2];
-
-        v2 = v1*v1 + v2*v2 + v3*v3;
-
-        //kin = m*v2/2 + m*v2/2 + m*v2/2...; m/2 em evidencia
-        kin += v2;
-    }
-
-    //printf("  Total Kinetic Energy is %f\n",N*mvs*m/2.);
-    return kin*const2m;
-
-}*/
 
 #define blockSize 32
 
@@ -514,11 +491,6 @@ double VelocityVerlet(double dt, int iter, FILE *fp) {
 
     double psum = 0.;
 
-    //  Compute accelerations from forces at current position
-    // this call was removed (commented) for predagogical reasons
-    //computeAccelerations();
-    //  Update positions and velocity with current velocity and acceleration
-    //printf("  Updated Positions!\n");
     double halfsqddt = 0.5 * dt * dt;
     double halfdt1 = 0.5 * dt;
     for (i=0; i<N; i++) { //ganho de +/- 0.5s.
@@ -547,11 +519,11 @@ double VelocityVerlet(double dt, int iter, FILE *fp) {
         for (j=0; j<3; j++) {
             if (r[i][j]<0.) {
                 v[i][j] *=-1.; //- elastic walls
-                psum += fabs(v[i][j]);  //const2m| contribution to pressure from "left" walls
+                psum += fabs(v[i][j]);
             }
             if (r[i][j]>=L) {
                 v[i][j] *=-1.;  //- elastic walls
-                psum += fabs(v[i][j]);  //const2m| contribution to pressure from "right" walls
+                psum += fabs(v[i][j]);
             }
         }
     }

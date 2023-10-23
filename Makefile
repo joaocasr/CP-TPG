@@ -1,10 +1,9 @@
 CC = gcc
 SRC = src/
 PROFLAGS = -pg
-CFLAGS = -O2 -funroll-all-loops -ftree-vectorize -mavx
+CFLAGS = -O2 -w -funroll-all-loops -ftree-vectorize -mavx
+
 #-ftree-vectorize -mavx
-# -mmmx
-#PREVIL = chmod +x
 #CFLAGS = -Ofast -w
 #-fopt-info-vec-optimized
 #-fopt-info-vec-optimized
