@@ -507,11 +507,12 @@ double potAccWork() {
     }
     double Pot = 0.0;
     double fep = 8 * epsilon;
-
+    double * aux = (double*)malloc(N*N*sizeof(double));
+    int it =0;
+    #pragma omp parallel reduction(+:it)
+    #pragma omp for schedule(dynamic)
     for (int j = 0; j < N; j += blockSize) {
         for (int i = 0; i < N; i += blockSize) {
-            #pragma omp parallel
-            #pragma omp for reduction(+:Pot)
             for (int jb = j; jb < j + blockSize && jb < N; jb++) {
                 for (int ib = i; ib < i + blockSize && ib < N && ib < jb; ib++) {
 
@@ -526,22 +527,29 @@ double potAccWork() {
                     double term2 = sigma / rSqdpow3;
                     double term1 = term2 * term2;
                     // zona critica -> garantir exclusao mutua
-                    Pot += term1 - term2;
+                    //Pot += term1 - term2;
+                    aux[it++] = term1 - term2;
 
                     double rSqdpow7 = rSqdpow3 * rSqdpow3 * r2;
                     double f = 24 * (2 - rSqdpow3) / rSqdpow7;
-                    #pragma omp parallel
-                    #pragma omp for reduction(+:a[:])
+
+                    // ou passamos isto para um array de 1 dimensao (#pragma omp parallel for reduction(+:a[:MAXPART]))
                     for (int k = 0; k < 3; k++) {
                         double val = rij[k] * f;
                         // zona critica -> garantir exclusao mutua
+                        #pragma omp atomic
                         a[ib][k] += val;
+                        #pragma omp atomic
                         a[jb][k] -= val;
                     }
                 }
             }
         }
     }
+    for(int ia = 0;ia<it;ia++){
+        Pot+=aux[ia];
+    }
+    free(aux);
     return Pot * fep;
 }
 
