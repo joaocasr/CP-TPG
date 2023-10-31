@@ -1,7 +1,7 @@
 CC = gcc
 SRC = src/
 PROFLAGS = -pg
-CFLAGS = -O2 -w -funroll-all-loops -ftree-vectorize -mavx
+CFLAGS = -O2 -w -fopenmp -funroll-all-loops -ftree-vectorize -mavx
 
 #-ftree-vectorize -mavx
 #CFLAGS = -Ofast -w

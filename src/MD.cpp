@@ -72,7 +72,7 @@ void initialize();
 double VelocityVerlet(double dt, int iter, FILE *fp);
 //  Compute Force using F = -dV/dr
 //  solve F = ma for use in Velocity Verlet
-double computeAccelerations();
+double potAccWork();
 //  Numerical Recipes function for generation gaussian distribution
 double gaussdist();
 //  Initialize velocities according to user-supplied initial Temperature (Tinit)
@@ -84,7 +84,7 @@ double MeanSquaredVelocity();
 //  Compute total kinetic energy from particle mass and velocities
 //double Kinetic();
 
-double potAccWork(int function);
+//double potAccWork(int function);
 
 int main()
 {
@@ -272,7 +272,7 @@ int main()
     //  Based on their positions, calculate the ininial intermolecular forces
     //  The accellerations of each particle will be defined from the forces and their
     //  mass, and this will allow us to update their positions via Newton's law
-    computeAccelerations();
+    potAccWork();
 
 
     // Print number of particles to the trajectory file
@@ -440,51 +440,6 @@ double MeanSquaredVelocity() {
     return v2;
 }
 
-
-#define blockSize 32
-
-double potAccWork(int fun) {
-    double Pot = 0.0;
-    double fep = 8 * epsilon;
-
-    for (int j = 0; j < N; j += blockSize) {
-        for (int i = 0; i < fun; i += blockSize) {
-            for (int jb = j; jb < j + blockSize && jb < N; jb++) {
-                for (int ib = i; ib < i + blockSize && ib < fun && ib < jb; ib++) {
-
-                    double rij[3];
-                    rij[0] = r[ib][0] - r[jb][0];
-                    rij[1] = r[ib][1] - r[jb][1];
-                    rij[2] = r[ib][2] - r[jb][2];
-
-                    double r2 = rij[0] * rij[0] + rij[1] * rij[1] + rij[2] * rij[2];
-                    double rSqdpow3 = r2 * r2 * r2;
-                    double term2 = sigma / rSqdpow3;
-                    double term1 = term2 * term2;
-                    Pot += term1 - term2;
-
-                    if (fun == N-1) {
-                        double rSqdpow7 = rSqdpow3 * rSqdpow3 * r2;
-                        double f = 24 * (2 - rSqdpow3) / rSqdpow7;
-                        for (int k = 0; k < 3; k++) {
-                            double val = rij[k] * f;
-                            a[ib][k] += val;
-                            a[jb][k] -= val;
-                        }
-                    }
-                }
-            }
-        }
-    }
-    return Pot * fep;
-}
-
-double Potential() {
-    //int fun = 1;//POTENTIAL
-    return potAccWork(N);
-}
-
-
 // returns sum of dv/dt*m/A (aka Pressure) from elastic collisions with walls
 double VelocityVerlet(double dt, int iter, FILE *fp) {
     int i, j;
@@ -505,7 +460,7 @@ double VelocityVerlet(double dt, int iter, FILE *fp) {
         //printf("  %i  %6.4e   %6.4e   %6.4e\n",i,r[i][0],r[i][1],r[i][2]);
     }
     //  Update accellerations from updated positions
-    potential = computeAccelerations();
+    potential = potAccWork();
     //  Update velocity with updated acceleration
     //double halfdt2 = 0.5 * dt;
     for (i=0; i<N; i++) {
@@ -542,14 +497,52 @@ double VelocityVerlet(double dt, int iter, FILE *fp) {
     return const2mdt * psum/(6*L*L);
 }
 
-double computeAccelerations() {
+#define blockSize 32
+double potAccWork() {
     //int fun = 2;//ACCELERATIONS
     for (int i = 0; i < N; i++) {  // set all accelerations to zero
         a[i][0] = 0;
         a[i][1] = 0;
         a[i][2] = 0;
     }
-    return potAccWork(N-1);
+    double Pot = 0.0;
+    double fep = 8 * epsilon;
+
+    for (int j = 0; j < N; j += blockSize) {
+        for (int i = 0; i < N; i += blockSize) {
+            #pragma omp parallel
+            #pragma omp for reduction(+:Pot)
+            for (int jb = j; jb < j + blockSize && jb < N; jb++) {
+                for (int ib = i; ib < i + blockSize && ib < N && ib < jb; ib++) {
+
+                    double rij[3];
+                    rij[0] = r[ib][0] - r[jb][0];
+                    rij[1] = r[ib][1] - r[jb][1];
+                    rij[2] = r[ib][2] - r[jb][2];
+
+                    double r2 = rij[0] * rij[0] + rij[1] * rij[1] + rij[2] * rij[2];
+                    double rSqdpow3 = r2 * r2 * r2;
+
+                    double term2 = sigma / rSqdpow3;
+                    double term1 = term2 * term2;
+                    // zona critica -> garantir exclusao mutua
+                    Pot += term1 - term2;
+
+                    double rSqdpow7 = rSqdpow3 * rSqdpow3 * r2;
+                    double f = 24 * (2 - rSqdpow3) / rSqdpow7;
+                    #pragma omp parallel
+                    #pragma omp for reduction(+:a[:])
+                    for (int k = 0; k < 3; k++) {
+                        double val = rij[k] * f;
+                        // zona critica -> garantir exclusao mutua
+                        a[ib][k] += val;
+                        a[jb][k] -= val;
+                    }
+                }
+            }
+        }
+    }
+    return Pot * fep;
 }
 
 void initializeVelocities() {
