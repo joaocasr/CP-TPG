@@ -509,43 +509,44 @@ double potAccWork() {
     double fep = 8 * epsilon;
     double * aux = (double*)malloc(N*N*sizeof(double));
     int it =0;
-    #pragma omp parallel reduction(+:it)
-    #pragma omp for schedule(dynamic)
-    for (int j = 0; j < N; j += blockSize) {
-        for (int i = 0; i < N; i += blockSize) {
-            for (int jb = j; jb < j + blockSize && jb < N; jb++) {
-                for (int ib = i; ib < i + blockSize && ib < N && ib < jb; ib++) {
+    #pragma omp parallel reduction(+:it,a[:MAXPART])
+    {
+        #pragma omp for schedule(dynamic)
+        for (int j = 0; j < N; j += blockSize) {
+            for (int i = 0; i < N; i += blockSize) {
+                for (int jb = j; jb < j + blockSize && jb < N; jb++) {
+                    for (int ib = i; ib < i + blockSize && ib < N && ib < jb; ib++) {
 
-                    double rij[3];
-                    rij[0] = r[ib][0] - r[jb][0];
-                    rij[1] = r[ib][1] - r[jb][1];
-                    rij[2] = r[ib][2] - r[jb][2];
+                        double rij[3];
+                        rij[0] = r[ib][0] - r[jb][0];
+                        rij[1] = r[ib][1] - r[jb][1];
+                        rij[2] = r[ib][2] - r[jb][2];
 
-                    double r2 = rij[0] * rij[0] + rij[1] * rij[1] + rij[2] * rij[2];
-                    double rSqdpow3 = r2 * r2 * r2;
+                        double r2 = rij[0] * rij[0] + rij[1] * rij[1] + rij[2] * rij[2];
+                        double rSqdpow3 = r2 * r2 * r2;
 
-                    double term2 = sigma / rSqdpow3;
-                    double term1 = term2 * term2;
-                    // zona critica -> garantir exclusao mutua
-                    //Pot += term1 - term2;
-                    aux[it++] = term1 - term2;
-
-                    double rSqdpow7 = rSqdpow3 * rSqdpow3 * r2;
-                    double f = 24 * (2 - rSqdpow3) / rSqdpow7;
-
-                    // ou passamos isto para um array de 1 dimensao (#pragma omp parallel for reduction(+:a[:MAXPART]))
-                    for (int k = 0; k < 3; k++) {
-                        double val = rij[k] * f;
+                        double term2 = sigma / rSqdpow3;
+                        double term1 = term2 * term2;
                         // zona critica -> garantir exclusao mutua
-                        #pragma omp atomic
-                        a[ib][k] += val;
-                        #pragma omp atomic
-                        a[jb][k] -= val;
+                        //Pot += term1 - term2;
+                        aux[it++] = term1 - term2;
+
+                        double rSqdpow7 = rSqdpow3 * rSqdpow3 * r2;
+                        double f = 24 * (2 - rSqdpow3) / rSqdpow7;
+
+                        // ou passamos isto para um array de 1 dimensao (#pragma omp parallel for reduction(+:a[:MAXPART]))
+                        for (int k = 0; k < 3; k++) {
+                            double val = rij[k] * f;
+                            // zona critica -> garantir exclusao mutua
+                            a[ib][k] += val;
+                            a[jb][k] -= val;
+                        }
                     }
                 }
             }
         }
     }
+
     for(int ia = 0;ia<it;ia++){
         Pot+=aux[ia];
     }
