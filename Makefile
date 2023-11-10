@@ -1,7 +1,7 @@
 CC = gcc
 SRC = src/
 PROFLAGS = -pg
-CFLAGS = -O2 -w -fopenmp -funroll-all-loops -ftree-vectorize -mavx
+CFLAGS = -O2 -w -fopenmp -funroll-all-loops -ftree-vectorize -mavx -march=native
 
 #-ftree-vectorize -mavx
 #CFLAGS = -Ofast -w
@@ -19,4 +19,5 @@ clean:
 	rm ./MD.exe cp_output.txt cp_average.txt cp_traj.xyz gmon.out
 
 run:
-	./MD.exe < inputdata.txt
+	srun --partition=cpar --cpus-per-task=2 perf stat ./MD.exe < inputdata.txt
+	#srun --partition=cpar --cpus-per-task=2 perf stat
