@@ -445,7 +445,6 @@ double VelocityVerlet(double dt, int iter, FILE *fp) {
 
     double halfsqddt = 0.5 * dt * dt;
     double halfdt1 = 0.5 * dt;
-    //#pragma omp parallel for reduction(+:psum) private(i)
     for (i=0; i<N; i++) { //ganho de +/- 0.5s.
 
         r[i][0] += v[i][0]*dt + a[i][0]*halfsqddt;
@@ -461,7 +460,6 @@ double VelocityVerlet(double dt, int iter, FILE *fp) {
     potential = potAccWork();
     //  Update velocity with updated acceleration
     //double halfdt2 = 0.5 * dt;
-    //#pragma omp parallel for private(j) shared(potential) reduction(+:psum)
     for (i=0; i<N; i++) {
         for (j=0; j<3; j++) {
             v[i][j] += a[i][j]*halfdt1;
@@ -496,7 +494,7 @@ double VelocityVerlet(double dt, int iter, FILE *fp) {
     return const2mdt * psum/(6*L*L);
 }
 
-#define blockSize 32
+#define blockSize 64
 double potAccWork() {
     double Pot = 0.0;
     double fep = 8 * epsilon;
@@ -540,10 +538,9 @@ double potAccWork() {
                 }
             }
         }
-
+        #pragma omp parallel for reduction(+:a[:N][:3])
         for (int i = 0; i < N; i++) {
             for (int k = 0; k < 3; k++) {
-                #pragma omp atomic
                 a[i][k] += aux[i][k];
             }
         }

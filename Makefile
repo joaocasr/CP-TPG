@@ -19,5 +19,5 @@ clean:
 	rm ./MD.exe cp_output.txt cp_average.txt cp_traj.xyz gmon.out
 
 run:
-	srun --partition=cpar --cpus-per-task=2 perf stat ./MD.exe < inputdata.txt
+	srun --partition=cpar --cpus-per-task=2 perf stat -e L1-dcache-load-misses -M cpi ./MD.exe < inputdata.txt
 	#srun --partition=cpar --cpus-per-task=2 perf stat
