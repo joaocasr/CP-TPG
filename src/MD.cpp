@@ -504,13 +504,14 @@ double potAccWork() {
         a[i][1] = 0;
         a[i][2] = 0;
     }
+
     #pragma omp parallel reduction(+:Pot)
     {
         double aux[MAXPART][3] = {0};
 
         #pragma omp for schedule(dynamic,1) collapse(2)
-        for (int i = 0; i < N; i += blockSize) {
-            for (int j = 0; j < N; j += blockSize) {
+        for (int j = 0; j < N; j += blockSize) {
+            for (int i = 0; i < N; i += blockSize) {
                 for (int jb = j; jb < j + blockSize && jb < N; jb++) {
                     for (int ib = i; ib < i + blockSize && ib < N && ib < jb; ib++) {
                         double rij[3];
@@ -544,6 +545,7 @@ double potAccWork() {
             }
         }
     }
+
     return Pot * fep;
 }
 
