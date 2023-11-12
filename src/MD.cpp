@@ -493,7 +493,7 @@ double VelocityVerlet(double dt, int iter, FILE *fp) {
 
     return const2mdt * psum/(6*L*L);
 }
-//wPtkFm71
+
 #define blockSize 64
 double potAccWork() {
     double Pot = 0.0;
