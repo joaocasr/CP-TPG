@@ -16,11 +16,11 @@ all: MDpar.exe #MDseq.exe
 
 MDpar.exe: $(SRC)/MD.cpp
 	module load gcc/11.2.0;
-	$(CC) $(PROFLAGS) $(CFLAGS) $(SRC)MD.cpp -lm -o MD.exe
+	$(CC) $(PROFLAGS) $(CFLAGS) $(SRC)MD.cpp -lm -o MDpar.exe
 
 MDseq.exe: $(SRC)/original.cpp
 	module load gcc/11.2.0;
-	$(CC) $(PROFLAGS) $(CFLAGS) $(SRC)original.cpp -lm -o MD.exe
+	$(CC) $(PROFLAGS) $(CFLAGS) $(SRC)original.cpp -lm -o MDseq.exe
 
 clean:
 	rm -f ./MD.exe cp_output.txt cp_average.txt cp_traj.xyz gmon.out report.txt
