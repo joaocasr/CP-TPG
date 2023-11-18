@@ -1,7 +1,7 @@
 CC = gcc
 SRC = src/
 PROFLAGS = -pg
-CFLAGS = -O2 -w -fopenmp -floop-interchange -funroll-all-loops -ftree-vectorize -mavx
+CFLAGS = -O2 -w -fopenmp -funroll-all-loops -ftree-vectorize -mavx -march=native
 
 #-ftree-vectorize -mavx
 #CFLAGS = -Ofast -w
@@ -10,14 +10,20 @@ CFLAGS = -O2 -w -fopenmp -floop-interchange -funroll-all-loops -ftree-vectorize 
 #-fopt-info-vec-missed
 #-O2
 
-.DEFAULT_GOAL = MD.exe
+.DEFAULT_GOAL = all
 
-MD.exe: $(SRC)/MD.cpp
+all: MDpar.exe #MDseq.exe
+
+MDpar.exe: $(SRC)/MD.cpp
+	module load gcc/11.2.0;
 	$(CC) $(PROFLAGS) $(CFLAGS) $(SRC)MD.cpp -lm -o MD.exe
 
+MDseq.exe: $(SRC)/original.cpp
+	module load gcc/11.2.0;
+	$(CC) $(PROFLAGS) $(CFLAGS) $(SRC)original.cpp -lm -o MD.exe
+
 clean:
-	rm ./MD.exe cp_output.txt cp_average.txt cp_traj.xyz gmon.out
+	rm -f ./MD.exe cp_output.txt cp_average.txt cp_traj.xyz gmon.out report.txt
 
 run:
-	srun --partition=cpar --cpus-per-task=2 perf stat -e L1-dcache-load-misses -M cpi ./MD.exe < inputdata.txt
-	#srun --partition=cpar --cpus-per-task=2 perf stat
+	sbatch script.sh
