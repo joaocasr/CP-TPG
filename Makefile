@@ -23,7 +23,7 @@ MDseq.exe: $(SRC)/original.cpp
 	$(CC) $(PROFLAGS) $(CFLAGS) $(SRC)original.cpp -lm -o MDseq.exe
 
 clean:
-	rm -f ./MD.exe cp_output.txt cp_average.txt cp_traj.xyz gmon.out report.txt
+	rm -f ./MDpar.exe /MDseq.exe cp_output.txt cp_average.txt cp_traj.xyz gmon.out report.txt
 
 run:
 	sbatch script.sh
