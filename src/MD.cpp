@@ -29,7 +29,7 @@
 #include<string.h>
 
 // Number of particles
-int N = 2160;
+int N= 5000;
 
 //  Lennard-Jones parameters in natural units!
 double sigma = 1.;
@@ -213,7 +213,6 @@ int main()
     printf("  NUMBER DENSITY OF LIQUID ARGON AT 1 ATM AND 87 K IS ABOUT 35000 moles/m^3\n");
 
     scanf("%lf",&rho);
-
 
     Vol = N/(rho*NA);
 
@@ -538,7 +537,7 @@ double potAccWork() {
                 }
             }
         }
-        #pragma omp parallel for reduction(+:a[:N][:3])
+        #pragma omp critical
         for (int i = 0; i < N; i++) {
             for (int k = 0; k < 3; k++) {
                 a[i][k] += aux[i][k];

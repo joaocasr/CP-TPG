@@ -12,7 +12,7 @@ CFLAGS = -O2 -w -fopenmp -funroll-all-loops -ftree-vectorize -mavx -march=native
 
 .DEFAULT_GOAL = all
 
-all: MDpar.exe #MDseq.exe
+all: MDpar.exe MDseq.exe
 
 MDpar.exe: $(SRC)/MD.cpp
 	module load gcc/11.2.0;
@@ -23,7 +23,10 @@ MDseq.exe: $(SRC)/original.cpp
 	$(CC) $(PROFLAGS) $(CFLAGS) $(SRC)original.cpp -lm -o MDseq.exe
 
 clean:
-	rm -f ./MDpar.exe /MDseq.exe cp_output.txt cp_average.txt cp_traj.xyz gmon.out report.txt
+	rm -f ./MD*.exe output*.txt slurm*.out cp_output.txt cp_average.txt cp_traj.xyz gmon.out report.txt
 
-run:
+runseq:
+	./MDseq.exe < inputdata.txt
+
+runpar:
 	sbatch script.sh

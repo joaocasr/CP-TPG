@@ -23,7 +23,7 @@
 #include<string.h>
 #include <time.h>
 // Number of particles
-int N = 2160;
+int N = 5000;
 //  Lennard-Jones parameters in natural units!
 double sigma = 1.;
 double epsilon = 1.;
