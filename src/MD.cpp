@@ -56,7 +56,7 @@ double r[MAXPART][3];
 //  Velocity
 double v[MAXPART][3];
 //  Acceleration
-double a[MAXPART][3];
+double a[MAXPART*3];
 //  Force
 double F[MAXPART][3];
 
@@ -445,14 +445,14 @@ double VelocityVerlet(double dt, int iter, FILE *fp) {
     double halfsqddt = 0.5 * dt * dt;
     double halfdt1 = 0.5 * dt;
     for (i=0; i<N; i++) { //ganho de +/- 0.5s.
+        int index = 3 *i;
+        r[i][0] += v[i][0]*dt + a[index]*halfsqddt;
+        r[i][1] += v[i][1]*dt + a[index+1]*halfsqddt;
+        r[i][2] += v[i][2]*dt + a[index+2]*halfsqddt;
 
-        r[i][0] += v[i][0]*dt + a[i][0]*halfsqddt;
-        r[i][1] += v[i][1]*dt + a[i][1]*halfsqddt;
-        r[i][2] += v[i][2]*dt + a[i][2]*halfsqddt;
-
-        v[i][0] += a[i][0]*halfdt1;
-        v[i][1] += a[i][1]*halfdt1;
-        v[i][2] += a[i][2]*halfdt1;
+        v[i][0] += a[index]*halfdt1;
+        v[i][1] += a[index+1]*halfdt1;
+        v[i][2] += a[index+2]*halfdt1;
         //printf("  %i  %6.4e   %6.4e   %6.4e\n",i,r[i][0],r[i][1],r[i][2]);
     }
     //  Update accellerations from updated positions
@@ -461,7 +461,7 @@ double VelocityVerlet(double dt, int iter, FILE *fp) {
     //double halfdt2 = 0.5 * dt;
     for (i=0; i<N; i++) {
         for (j=0; j<3; j++) {
-            v[i][j] += a[i][j]*halfdt1;
+            v[i][j] += a[i*3+j]*halfdt1;
         }
     }
     double const2mdt = 2 * m / dt;
@@ -493,27 +493,26 @@ double VelocityVerlet(double dt, int iter, FILE *fp) {
     return const2mdt * psum/(6*L*L);
 }
 
-#define blockSize 64
+#define blockSize 96
 double potAccWork() {
     double Pot = 0.0;
     double fep = 8 * epsilon;
 
     for (int i = 0; i < N; i++) {
-        a[i][0] = 0;
-        a[i][1] = 0;
-        a[i][2] = 0;
+        a[i*3] = 0;
+        a[i*3+1] = 0;
+        a[i*3+2] = 0;
     }
 
-    #pragma omp parallel reduction(+:Pot)
+    #pragma omp parallel reduction(+:Pot) reduction(+:a[:N*3])
     {
-        double aux[MAXPART][3] = {0};
-
         #pragma omp for schedule(dynamic,1) collapse(2)
         for (int j = 0; j < N; j += blockSize) {
-            for (int i = 0; i < N; i += blockSize) {
+            for (int i = 0; i < N; i += blockSize) {  // Each thread will work on a different block
                 for (int jb = j; jb < j + blockSize && jb < N; jb++) {
                     for (int ib = i; ib < i + blockSize && ib < N && ib < jb; ib++) {
                         double rij[3];
+
                         rij[0] = r[ib][0] - r[jb][0];
                         rij[1] = r[ib][1] - r[jb][1];
                         rij[2] = r[ib][2] - r[jb][2];
@@ -527,20 +526,13 @@ double potAccWork() {
 
                         double rSqdpow7 = rSqdpow3 * rSqdpow3 * r2;
                         double f = 24 * (2 - rSqdpow3) / rSqdpow7;
-
                         for (int k = 0; k < 3; k++) {
                             double val = rij[k] * f;
-                            aux[ib][k] += val;
-                            aux[jb][k] -= val;
+                            a[ib*3+k] += val;
+                            a[jb*3+k] -= val;
                         }
                     }
                 }
-            }
-        }
-        #pragma omp critical
-        for (int i = 0; i < N; i++) {
-            for (int k = 0; k < 3; k++) {
-                a[i][k] += aux[i][k];
             }
         }
     }

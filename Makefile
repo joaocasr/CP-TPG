@@ -1,7 +1,7 @@
 CC = gcc
 SRC = src/
 PROFLAGS = -pg
-CFLAGS = -O2 -w -fopenmp -funroll-all-loops -ftree-vectorize -mavx -march=native
+CFLAGS = -O2 -w -funroll-all-loops -ftree-vectorize -mavx -march=native -fpredictive-commoning
 
 #-ftree-vectorize -mavx
 #CFLAGS = -Ofast -w
@@ -15,11 +15,11 @@ CFLAGS = -O2 -w -fopenmp -funroll-all-loops -ftree-vectorize -mavx -march=native
 all: MDpar.exe MDseq.exe
 
 MDpar.exe: $(SRC)/MD.cpp
-	module load gcc/11.2.0;
-	$(CC) $(PROFLAGS) $(CFLAGS) $(SRC)MD.cpp -lm -o MDpar.exe
+	module load gcc/11.2.0;\
+	$(CC) $(PROFLAGS) $(CFLAGS) $(SRC)MD.cpp -lm -fopenmp -o MDpar.exe
 
 MDseq.exe: $(SRC)/original.cpp
-	module load gcc/11.2.0;
+	module load gcc/11.2.0;\
 	$(CC) $(PROFLAGS) $(CFLAGS) $(SRC)original.cpp -lm -o MDseq.exe
 
 clean:
