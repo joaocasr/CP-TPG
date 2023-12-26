@@ -23,6 +23,7 @@
  Wayne NJ 07470
 
  */
+#include<mpi.h>
 #include<stdio.h>
 #include<stdlib.h>
 #include<math.h>
@@ -84,8 +85,7 @@ double MeanSquaredVelocity();
 //double Kinetic();
 
 //double potAccWork(int function);
-
-int main()
+int main(int argc, char *argv[])
 {
     //  variable delcarations
     int i;
@@ -94,24 +94,39 @@ int main()
     double KE, PE, mvs, gc, Z;
     char prefix[1000], tfn[1000], ofn[1000], afn[1000];
     FILE *tfp, *ofp, *afp;
+    MPI_Init(&argc, &argv);
 
 
-    printf("\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-    printf("                  WELCOME TO WILLY P CHEM MD!\n");
-    printf("  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-    printf("\n  ENTER A TITLE FOR YOUR CALCULATION!\n");
-    scanf("%s",prefix);
-    strcpy(tfn,prefix);
-    strcat(tfn,"_traj.xyz");
-    strcpy(ofn,prefix);
-    strcat(ofn,"_output.txt");
-    strcpy(afn,prefix);
-    strcat(afn,"_average.txt");
+    int size, rank;
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if(rank==0){
+        printf("\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+        printf("                  WELCOME TO WILLY P CHEM MD!\n");
+        printf("  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+        printf("\n  ENTER A TITLE FOR YOUR CALCULATION!\n");
+        scanf("%s",prefix);
+        strcpy(tfn,prefix);
+        strcat(tfn,"_traj.xyz");
+        strcpy(ofn,prefix);
+        strcat(ofn,"_output.txt");
+        strcpy(afn,prefix);
+        strcat(afn,"_average.txt");
 
-    printf("\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-    printf("                  TITLE ENTERED AS '%s'\n",prefix);
-    printf("  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+        printf("\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+        printf("                  TITLE ENTERED AS '%s'\n",prefix);
+        printf("  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+    }
+    // MPI Barrier to synchronize all processes after input
+    MPI_Barrier(MPI_COMM_WORLD);
 
+    // Broadcast the values to all processes
+    MPI_Bcast(prefix, 1000, MPI_CHAR, 0, MPI_COMM_WORLD);
+    MPI_Bcast(tfn, 1000, MPI_CHAR, 0, MPI_COMM_WORLD);
+    MPI_Bcast(ofn, 1000, MPI_CHAR, 0, MPI_COMM_WORLD);
+    MPI_Bcast(afn, 1000, MPI_CHAR, 0, MPI_COMM_WORLD);
+
+    MPI_Barrier(MPI_COMM_WORLD);
     /*     Table of values for Argon relating natural units to SI units:
      *     These are derived from Lennard-Jones parameters from the article
      *     "Liquid argon: Monte carlo and molecular dynamics calculations"
@@ -129,17 +144,18 @@ int main()
     //  Edit these factors to be computed in terms of basic properties in natural units of
     //  the gas being simulated
 
-
-    printf("\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-    printf("  WHICH NOBLE GAS WOULD YOU LIKE TO SIMULATE? (DEFAULT IS ARGON)\n");
-    printf("\n  FOR HELIUM,  TYPE 'He' THEN PRESS 'return' TO CONTINUE\n");
-    printf("  FOR NEON,    TYPE 'Ne' THEN PRESS 'return' TO CONTINUE\n");
-    printf("  FOR ARGON,   TYPE 'Ar' THEN PRESS 'return' TO CONTINUE\n");
-    printf("  FOR KRYPTON, TYPE 'Kr' THEN PRESS 'return' TO CONTINUE\n");
-    printf("  FOR XENON,   TYPE 'Xe' THEN PRESS 'return' TO CONTINUE\n");
-    printf("  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-    scanf("%s",atype);
-
+    if (rank == 0) {
+        printf("\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+        printf("  WHICH NOBLE GAS WOULD YOU LIKE TO SIMULATE? (DEFAULT IS ARGON)\n");
+        printf("\n  FOR HELIUM,  TYPE 'He' THEN PRESS 'return' TO CONTINUE\n");
+        printf("  FOR NEON,    TYPE 'Ne' THEN PRESS 'return' TO CONTINUE\n");
+        printf("  FOR ARGON,   TYPE 'Ar' THEN PRESS 'return' TO CONTINUE\n");
+        printf("  FOR KRYPTON, TYPE 'Kr' THEN PRESS 'return' TO CONTINUE\n");
+        printf("  FOR XENON,   TYPE 'Xe' THEN PRESS 'return' TO CONTINUE\n");
+        printf("  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+        scanf("%s",atype);
+    }
+    MPI_Bcast(atype, 3, MPI_CHAR, 0, MPI_COMM_WORLD);
     if (strcmp(atype,"He")==0) {
 
         VolFac = 1.8399744000000005e-29;
@@ -190,28 +206,32 @@ int main()
         strcpy(atype,"Ar");
 
     }
-    printf("\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-    printf("\n                     YOU ARE SIMULATING %s GAS! \n",atype);
-    printf("\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+    if(rank==0){
+        printf("\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+        printf("\n                     YOU ARE SIMULATING %s GAS! \n",atype);
+        printf("\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 
-    printf("\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-    printf("\n  YOU WILL NOW ENTER A FEW SIMULATION PARAMETERS\n");
-    printf("  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-    printf("\n\n  ENTER THE INTIAL TEMPERATURE OF YOUR GAS IN KELVIN\n");
-    scanf("%lf",&Tinit);
+        printf("\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+        printf("\n  YOU WILL NOW ENTER A FEW SIMULATION PARAMETERS\n");
+        printf("  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+        printf("\n\n  ENTER THE INTIAL TEMPERATURE OF YOUR GAS IN KELVIN\n");
+        scanf("%lf",&Tinit);
+    }
+
     // Make sure temperature is a positive number!
-    if (Tinit<0.) {
+    if (Tinit<0. && rank==0) {
         printf("\n  !!!!! ABSOLUTE TEMPERATURE MUST BE A POSITIVE NUMBER!  PLEASE TRY AGAIN WITH A POSITIVE TEMPERATURE!!!\n");
         exit(0);
     }
     // Convert initial temperature from kelvin to natural units
     Tinit /= TempFac;
+    MPI_Bcast(&Tinit, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-
-    printf("\n\n  ENTER THE NUMBER DENSITY IN moles/m^3\n");
-    printf("  FOR REFERENCE, NUMBER DENSITY OF AN IDEAL GAS AT STP IS ABOUT 40 moles/m^3\n");
-    printf("  NUMBER DENSITY OF LIQUID ARGON AT 1 ATM AND 87 K IS ABOUT 35000 moles/m^3\n");
-
+    if(rank==0){
+        printf("\n\n  ENTER THE NUMBER DENSITY IN moles/m^3\n");
+        printf("  FOR REFERENCE, NUMBER DENSITY OF AN IDEAL GAS AT STP IS ABOUT 40 moles/m^3\n");
+        printf("  NUMBER DENSITY OF LIQUID ARGON AT 1 ATM AND 87 K IS ABOUT 35000 moles/m^3\n");
+    }
     scanf("%lf",&rho);
 
     Vol = N/(rho*NA);
@@ -219,7 +239,7 @@ int main()
     Vol /= VolFac;
 
     //  Limiting N to MAXPART for practical reasons
-    if (N>=MAXPART) {
+    if (N>=MAXPART && rank==0) {
 
         printf("\n\n\n  MAXIMUM NUMBER OF PARTICLES IS %i\n\n  PLEASE ADJUST YOUR INPUT FILE ACCORDINGLY \n\n", MAXPART);
         exit(0);
@@ -229,7 +249,7 @@ int main()
     //  Remember VDW radius of the particles is 1 natural unit of length
     //  and volume = L*L*L, so if V = N*L*L*L = N, then all the particles
     //  will be initialized with an interparticle separation equal to 2xVDW radius
-    if (Vol<N) {
+    if (Vol<N && rank==0) {
 
         printf("\n\n\n  YOUR DENSITY IS VERY HIGH!\n\n");
         printf("  THE NUMBER OF PARTICLES IS %i AND THE AVAILABLE VOLUME IS %f NATURAL UNITS\n",N,Vol);
@@ -242,10 +262,11 @@ int main()
     L = pow(Vol,(1./3));
 
     //  Files that we can write different quantities to
-    tfp = fopen(tfn,"w");     //  The MD trajectory, coordinates of every particle at each timestep
-    ofp = fopen(ofn,"w");     //  Output of other quantities (T, P, gc, etc) at every timestep
-    afp = fopen(afn,"w");    //  Average T, P, gc, etc from the simulation
-
+    if (rank == 0) {
+        tfp = fopen(tfn,"w");     //  The MD trajectory, coordinates of every particle at each timestep
+        ofp = fopen(ofn,"w");     //  Output of other quantities (T, P, gc, etc) at every timestep
+        afp = fopen(afn,"w");    //  Average T, P, gc, etc from the simulation
+    }
     int NumTime;
     if (strcmp(atype,"He")==0) {
 
@@ -261,7 +282,6 @@ int main()
         NumTime=200;
 
     }
-
     //  Put all the atoms in simple crystal lattice and give them random velocities
     //  that corresponds to the initial temperature we have specified
     initialize();
@@ -271,10 +291,10 @@ int main()
     //  mass, and this will allow us to update their positions via Newton's law
     potAccWork();
 
-
     // Print number of particles to the trajectory file
-    fprintf(tfp,"%i\n",N);
-
+    if(rank==0){
+        fprintf(tfp,"%i\n",N);
+    }
     //  We want to calculate the average Temperature and Pressure for the simulation
     //  The variables need to be set to zero initially
     Pavg = 0;
@@ -282,22 +302,24 @@ int main()
 
 
     int tenp = floor(NumTime/10);
-    fprintf(ofp,"  time (s)              T(t) (K)              P(t) (Pa)           Kinetic En. (n.u.)     Potential En. (n.u.) Total En. (n.u.)\n");
-    printf("  PERCENTAGE OF CALCULATION COMPLETE:\n  [");
+    if(rank==0){
+        fprintf(ofp,"  time (s)              T(t) (K)              P(t) (Pa)           Kinetic En. (n.u.)     Potential En. (n.u.) Total En. (n.u.)\n");
+        printf("  PERCENTAGE OF CALCULATION COMPLETE:\n  [");
+    }
     for (i=0; i<NumTime+1; i++) {
 
         //  This just prints updates on progress of the calculation for the users convenience
-        if (i==tenp) printf(" 10 |");
-        else if (i==2*tenp) printf(" 20 |");
-        else if (i==3*tenp) printf(" 30 |");
-        else if (i==4*tenp) printf(" 40 |");
-        else if (i==5*tenp) printf(" 50 |");
-        else if (i==6*tenp) printf(" 60 |");
-        else if (i==7*tenp) printf(" 70 |");
-        else if (i==8*tenp) printf(" 80 |");
-        else if (i==9*tenp) printf(" 90 |");
-        else if (i==10*tenp) printf(" 100 ]\n");
-        fflush(stdout);
+        if (i==tenp && rank == 0) printf(" 10 |");
+        else if (i==2*tenp && rank == 0) printf(" 20 |");
+        else if (i==3*tenp && rank == 0) printf(" 30 |");
+        else if (i==4*tenp && rank == 0) printf(" 40 |");
+        else if (i==5*tenp && rank == 0) printf(" 50 |");
+        else if (i==6*tenp && rank == 0) printf(" 60 |");
+        else if (i==7*tenp && rank == 0) printf(" 70 |");
+        else if (i==8*tenp && rank == 0) printf(" 80 |");
+        else if (i==9*tenp && rank == 0) printf(" 90 |");
+        else if (i==10*tenp && rank == 0) printf(" 100 ]\n");
+        if(rank==0) fflush(stdout);
 
 
         // This updates the positions and velocities using Newton's Laws
@@ -327,41 +349,46 @@ int main()
 
         Tavg += Temp;
         Pavg += Press;
-
-        fprintf(ofp,"  %8.12e  %20.12f  %20.12f %20.12f  %20.12f  %20.12f \n",i*dt*timefac,Temp,Press,KE, PE, KE+PE);
-
+        if (rank == 0) {
+            fprintf(ofp,"  %8.12e  %20.12f  %20.12f %20.12f  %20.12f  %20.12f \n",i*dt*timefac,Temp,Press,KE, PE, KE+PE);
+        }
     }
 
     // Because we have calculated the instantaneous temperature and pressure,
     // we can take the average over the whole simulation here
-    Pavg /= NumTime;
-    Tavg /= NumTime;
-    Z = Pavg*(Vol*VolFac)/(N*kBSI*Tavg);
-    gc = NA*Pavg*(Vol*VolFac)/(N*Tavg);
-    fprintf(afp,"  Total Time (s)      T (K)               P (Pa)      PV/nT (J/(mol K))         Z           V (m^3)              N\n");
-    fprintf(afp," --------------   -----------        ---------------   --------------   ---------------   ------------   -----------\n");
-    fprintf(afp,"  %8.4e  %15.5f       %15.5f     %10.5f       %10.5f        %10.5e         %i\n",i*dt*timefac,Tavg,Pavg,gc,Z,Vol*VolFac,N);
+    if(rank ==0){
+        Pavg /= NumTime;
+        Tavg /= NumTime;
+        Z = Pavg*(Vol*VolFac)/(N*kBSI*Tavg);
+        gc = NA*Pavg*(Vol*VolFac)/(N*Tavg);
+        fprintf(afp,"  Total Time (s)      T (K)               P (Pa)      PV/nT (J/(mol K))         Z           V (m^3)              N\n");
+        fprintf(afp," --------------   -----------        ---------------   --------------   ---------------   ------------   -----------\n");
+        fprintf(afp,"  %8.4e  %15.5f       %15.5f     %10.5f       %10.5f        %10.5e         %i\n",i*dt*timefac,Tavg,Pavg,gc,Z,Vol*VolFac,N);
 
-    printf("\n  TO ANIMATE YOUR SIMULATION, OPEN THE FILE \n  '%s' WITH VMD AFTER THE SIMULATION COMPLETES\n",tfn);
-    printf("\n  TO ANALYZE INSTANTANEOUS DATA ABOUT YOUR MOLECULE, OPEN THE FILE \n  '%s' WITH YOUR FAVORITE TEXT EDITOR OR IMPORT THE DATA INTO EXCEL\n",ofn);
-    printf("\n  THE FOLLOWING THERMODYNAMIC AVERAGES WILL BE COMPUTED AND WRITTEN TO THE FILE  \n  '%s':\n",afn);
-    printf("\n  AVERAGE TEMPERATURE (K):                 %15.12f\n",Tavg);
-    printf("\n  AVERAGE PRESSURE  (Pa):                  %15.12f\n",Pavg);
-    printf("\n  PV/nT (J * mol^-1 K^-1):                 %15.12f\n",gc);
-    printf("\n  PERCENT ERROR of pV/nT AND GAS CONSTANT: %15.12f\n",100*fabs(gc-8.3144598)/8.3144598);
-    printf("\n  THE COMPRESSIBILITY (unitless):          %15.12f \n",Z);
-    printf("\n  TOTAL VOLUME (m^3):                      %10.12e \n",Vol*VolFac);
-    printf("\n  NUMBER OF PARTICLES (unitless):          %i \n", N);
+        printf("\n  TO ANIMATE YOUR SIMULATION, OPEN THE FILE \n  '%s' WITH VMD AFTER THE SIMULATION COMPLETES\n",tfn);
+        printf("\n  TO ANALYZE INSTANTANEOUS DATA ABOUT YOUR MOLECULE, OPEN THE FILE \n  '%s' WITH YOUR FAVORITE TEXT EDITOR OR IMPORT THE DATA INTO EXCEL\n",ofn);
+        printf("\n  THE FOLLOWING THERMODYNAMIC AVERAGES WILL BE COMPUTED AND WRITTEN TO THE FILE  \n  '%s':\n",afn);
+        printf("\n  AVERAGE TEMPERATURE (K):                 %15.12f\n",Tavg);
+        printf("\n  AVERAGE PRESSURE  (Pa):                  %15.12f\n",Pavg);
+        printf("\n  PV/nT (J * mol^-1 K^-1):                 %15.12f\n",gc);
+        printf("\n  PERCENT ERROR of pV/nT AND GAS CONSTANT: %15.12f\n",100*fabs(gc-8.3144598)/8.3144598);
+        printf("\n  THE COMPRESSIBILITY (unitless):          %15.12f \n",Z);
+        printf("\n  TOTAL VOLUME (m^3):                      %10.12e \n",Vol*VolFac);
+        printf("\n  NUMBER OF PARTICLES (unitless):          %i \n", N);
+    }
 
+    MPI_Barrier(MPI_COMM_WORLD);
 
+    if (rank == 0) {
+        fclose(tfp);
+        fclose(ofp);
+        fclose(afp);
+    }
 
-
-    fclose(tfp);
-    fclose(ofp);
-    fclose(afp);
-
+    MPI_Finalize();
     return 0;
 }
+
 
 
 void initialize() {
@@ -498,18 +525,31 @@ double potAccWork() {
     double Pot = 0.0;
     double fep = 8 * epsilon;
 
-    for (int i = 0; i < N; i++) {
-        a[i*3] = 0;
-        a[i*3+1] = 0;
-        a[i*3+2] = 0;
+    int rank, size;
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    // Calculate the range of indices for each process. Each process will compute a different chunk of data
+    int chunk = N / size;
+    int resto = N % size;
+    int start = rank * chunk + (rank < resto ? rank : resto);
+    int end = start + chunk + (rank < resto ? 1 : 0);
+
+    for (int i = 0; i < N * 3; i++) {
+        a[i] = 0;
     }
+
+    // Broadcast the matrix 'r' to all processes
+    // Each process needs the matrix 'r' since the positions of all particles are used in the force and potential energy calculations
+    MPI_Bcast(r, N * 3, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
 #pragma omp parallel reduction(+:Pot) reduction(+:a[:N*3])
     {
 #pragma omp for schedule(dynamic,1) collapse(2)
-        for (int j = 0; j < N; j += blockSize) {
+        for (int j = start; j < end; j += blockSize) { //Each process will work on its own chunk
             for (int i = 0; i < N; i += blockSize) {  // Each thread will work on a different block
-                for (int jb = j; jb < j + blockSize && jb < N; jb++) {
+                for (int jb = j; jb < j + blockSize && jb < end; jb++) {
                     for (int ib = i; ib < i + blockSize && ib < N && ib < jb; ib++) {
                         double rij[3];
 
@@ -528,14 +568,20 @@ double potAccWork() {
                         double f = 24 * (2 - rSqdpow3) / rSqdpow7;
                         for (int k = 0; k < 3; k++) {
                             double val = rij[k] * f;
-                            a[ib*3+k] += val;
-                            a[jb*3+k] -= val;
+                            //Forces are accumulated locally within each process
+                            a[ib * 3 + k] += val;
+                            a[jb * 3 + k] -= val;
                         }
                     }
                 }
             }
         }
     }
+    // Sum the local Pot values from all MPI processes
+    MPI_Allreduce(MPI_IN_PLACE, &Pot, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+    // Sum the local forces of 'a' from all MPI processes
+    MPI_Allreduce(MPI_IN_PLACE, a, N * 3, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
     return Pot * fep;
 }

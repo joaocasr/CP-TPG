@@ -1,4 +1,5 @@
 CC = gcc
+MPICC = mpic++
 SRC = src/
 PROFLAGS = -pg
 CFLAGS = -O2 -w -funroll-all-loops -ftree-vectorize -mavx -march=native -fpredictive-commoning
@@ -12,7 +13,11 @@ CFLAGS = -O2 -w -funroll-all-loops -ftree-vectorize -mavx -march=native -fpredic
 
 .DEFAULT_GOAL = all
 
-all: MDpar.exe MDseq.exe
+all: MDmpi.exe MDpar.exe MDseq.exe
+
+MDmpi.exe: $(SRC)/MDMPI.cpp
+	module load gcc/11.2.0;\
+	$(MPICC) $(PROFLAGS) $(CFLAGS) $(SRC)MDMPI.cpp -lm -fopenmp -o MDmpi.exe
 
 MDpar.exe: $(SRC)/MD.cpp
 	module load gcc/11.2.0;\
@@ -32,3 +37,5 @@ runpar:
 	export OMP_NUM_THREADS=21;\
 	./MDpar.exe < inputdata.txt
 
+runmpi:
+	sbatch script2.sh
