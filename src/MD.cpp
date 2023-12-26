@@ -504,9 +504,9 @@ double potAccWork() {
         a[i*3+2] = 0;
     }
 
-#pragma omp parallel reduction(+:Pot) reduction(+:a[:N*3])
+    #pragma omp parallel reduction(+:Pot) reduction(+:a[:N*3])
     {
-#pragma omp for schedule(dynamic,1) collapse(2)
+        #pragma omp for schedule(dynamic,1) collapse(2)
         for (int j = 0; j < N; j += blockSize) {
             for (int i = 0; i < N; i += blockSize) {  // Each thread will work on a different block
                 for (int jb = j; jb < j + blockSize && jb < N; jb++) {

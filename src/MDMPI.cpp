@@ -544,9 +544,9 @@ double potAccWork() {
     // Each process needs the matrix 'r' since the positions of all particles are used in the force and potential energy calculations
     MPI_Bcast(r, N * 3, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-#pragma omp parallel reduction(+:Pot) reduction(+:a[:N*3])
+    #pragma omp parallel reduction(+:Pot) reduction(+:a[:N*3])
     {
-#pragma omp for schedule(dynamic,1) collapse(2)
+        #pragma omp for schedule(dynamic,1) collapse(2)
         for (int j = start; j < end; j += blockSize) { //Each process will work on its own chunk
             for (int i = 0; i < N; i += blockSize) {  // Each thread will work on a different block
                 for (int jb = j; jb < j + blockSize && jb < end; jb++) {
