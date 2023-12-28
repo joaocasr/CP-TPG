@@ -83,7 +83,8 @@ double Potential();
 double MeanSquaredVelocity();
 //  Compute total kinetic energy from particle mass and velocities
 //double Kinetic();
-
+int size;
+int rank;
 //double potAccWork(int function);
 int main(int argc, char *argv[])
 {
@@ -97,7 +98,6 @@ int main(int argc, char *argv[])
     MPI_Init(&argc, &argv);
 
 
-    int size, rank;
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     if(rank==0){
@@ -118,15 +118,15 @@ int main(int argc, char *argv[])
         printf("  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
     }
     // MPI Barrier to synchronize all processes after input
-    MPI_Barrier(MPI_COMM_WORLD);
+    //MPI_Barrier(MPI_COMM_WORLD);
 
     // Broadcast the values to all processes
-    MPI_Bcast(prefix, 1000, MPI_CHAR, 0, MPI_COMM_WORLD);
-    MPI_Bcast(tfn, 1000, MPI_CHAR, 0, MPI_COMM_WORLD);
-    MPI_Bcast(ofn, 1000, MPI_CHAR, 0, MPI_COMM_WORLD);
-    MPI_Bcast(afn, 1000, MPI_CHAR, 0, MPI_COMM_WORLD);
+    //MPI_Bcast(prefix, 1000, MPI_CHAR, 0, MPI_COMM_WORLD);
+    //MPI_Bcast(tfn, 1000, MPI_CHAR, 0, MPI_COMM_WORLD);
+    //MPI_Bcast(ofn, 1000, MPI_CHAR, 0, MPI_COMM_WORLD);
+    //MPI_Bcast(afn, 1000, MPI_CHAR, 0, MPI_COMM_WORLD);
 
-    MPI_Barrier(MPI_COMM_WORLD);
+    //MPI_Barrier(MPI_COMM_WORLD);
     /*     Table of values for Argon relating natural units to SI units:
      *     These are derived from Lennard-Jones parameters from the article
      *     "Liquid argon: Monte carlo and molecular dynamics calculations"
@@ -217,6 +217,7 @@ int main(int argc, char *argv[])
         printf("\n\n  ENTER THE INTIAL TEMPERATURE OF YOUR GAS IN KELVIN\n");
         scanf("%lf",&Tinit);
     }
+    MPI_Bcast(&Tinit, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     // Make sure temperature is a positive number!
     if (Tinit<0. && rank==0) {
@@ -225,7 +226,6 @@ int main(int argc, char *argv[])
     }
     // Convert initial temperature from kelvin to natural units
     Tinit /= TempFac;
-    MPI_Bcast(&Tinit, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     if(rank==0){
         printf("\n\n  ENTER THE NUMBER DENSITY IN moles/m^3\n");
@@ -284,8 +284,9 @@ int main(int argc, char *argv[])
     }
     //  Put all the atoms in simple crystal lattice and give them random velocities
     //  that corresponds to the initial temperature we have specified
-    initialize();
-
+    if(rank==0){
+        initialize();
+    }
     //  Based on their positions, calculate the ininial intermolecular forces
     //  The accellerations of each particle will be defined from the forces and their
     //  mass, and this will allow us to update their positions via Newton's law
@@ -327,29 +328,29 @@ int main(int argc, char *argv[])
         // which is a Kinetic Theory of gasses concept of Pressure
         Press = VelocityVerlet(dt, i+1, tfp);
         Press *= PressFac;
-
         //  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         //  Now we would like to calculate somethings about the system:
         //  Instantaneous mean velocity squared, Temperature, Pressure
         //  Potential, and Kinetic Energy
         //  We would also like to use the IGL to try to see if we can extract the gas constant
-        mvs = MeanSquaredVelocity();
-        //Kinetic() == MeanSquaredVelocity() * N * const2m
-        //KENETIC ENERGY USING PREVIOUS VALUE
-        KE = mvs * N * const2m;
-        PE = potential;
-        // Temperature from Kinetic Theory
-        Temp = m*mvs/(3*kB) * TempFac;
+        if(rank==0){
+            mvs = MeanSquaredVelocity();
+            //Kinetic() == MeanSquaredVelocity() * N * const2m
+            //KENETIC ENERGY USING PREVIOUS VALUE
+            KE = mvs * N * const2m;
+            PE = potential;
+            // Temperature from Kinetic Theory
+            Temp = m*mvs/(3*kB) * TempFac;
 
-        // Instantaneous gas constant and compressibility - not well defined because
-        // pressure may be zero in some instances because there will be zero wall collisions,
-        // pressure may be very high in some instances because there will be a number of collisions
-        gc = NA*Press*(Vol*VolFac)/(N*Temp);
-        Z  = Press*(Vol*VolFac)/(N*kBSI*Temp);
+            // Instantaneous gas constant and compressibility - not well defined because
+            // pressure may be zero in some instances because there will be zero wall collisions,
+            // pressure may be very high in some instances because there will be a number of collisions
+            gc = NA*Press*(Vol*VolFac)/(N*Temp);
+            Z  = Press*(Vol*VolFac)/(N*kBSI*Temp);
 
-        Tavg += Temp;
-        Pavg += Press;
-        if (rank == 0) {
+            Tavg += Temp;
+            Pavg += Press;
+
             fprintf(ofp,"  %8.12e  %20.12f  %20.12f %20.12f  %20.12f  %20.12f \n",i*dt*timefac,Temp,Press,KE, PE, KE+PE);
         }
     }
@@ -377,13 +378,12 @@ int main(int argc, char *argv[])
         printf("\n  NUMBER OF PARTICLES (unitless):          %i \n", N);
     }
 
-    MPI_Barrier(MPI_COMM_WORLD);
-
     if (rank == 0) {
         fclose(tfp);
         fclose(ofp);
         fclose(afp);
     }
+    MPI_Barrier(MPI_COMM_WORLD);
 
     MPI_Finalize();
     return 0;
@@ -525,19 +525,16 @@ double potAccWork() {
     double Pot = 0.0;
     double fep = 8 * epsilon;
 
-    int rank, size;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-
     // Calculate the range of indices for each process. Each process will compute a different chunk of data
     int chunk = N / size;
     int resto = N % size;
     int start = rank * chunk + (rank < resto ? rank : resto);
     int end = start + chunk + (rank < resto ? 1 : 0);
 
-    for (int i = 0; i < N * 3; i++) {
-        a[i] = 0;
+    for (int i = 0; i < N; i++) {
+        a[i*3] = 0;
+        a[i*3+1] = 0;
+        a[i*3+2] = 0;
     }
 
     // Broadcast the matrix 'r' to all processes

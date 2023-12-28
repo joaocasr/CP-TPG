@@ -37,5 +37,5 @@ runpar:
 	export OMP_NUM_THREADS=21;\
 	./MDpar.exe < inputdata.txt
 
-runmpi:
+run:
 	sbatch script2.sh
